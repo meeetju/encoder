@@ -29,7 +29,7 @@ Input and output text may be one of following:
 
 ## Design
 
-![Class Diagram](http://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/meeetju/text_encoder/meeetju/start/docs/design.puml)
+![Class Diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/meeetju/text_encoder/meeetju/start/docs/design.puml)
 
 ## Running the tests with coverage check
 
