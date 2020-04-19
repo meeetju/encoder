@@ -1,6 +1,6 @@
 import pytest
 
-from .._coder import Coder, Cesar, Xor
+from .._coder import Coder, Cesar, Xor, IterableEncryptionKey, ScalarEncryptionKey
 
 
 class ChildCoder(Coder):
@@ -17,7 +17,7 @@ class TestChildCoder:
                                      "abstract methods encode_char"
 
         with pytest.raises(TypeError) as error:
-            ChildCoder(3)
+            ChildCoder(ScalarEncryptionKey(3))
 
         assert expected_fault_description in error.value.args
 
@@ -25,32 +25,32 @@ class TestChildCoder:
 class TestCesar:
 
     def test_cesar_encodes_printables_properly_with_positive_key(self):
-        cesar = Cesar(3)
+        cesar = Cesar(ScalarEncryptionKey(3))
         result = cesar.encode_char('a')
         assert result == 'd'
 
     def test_cesar_encodes_printables_properly_with_negative_key(self):
-        cesar = Cesar(-3)
+        cesar = Cesar(ScalarEncryptionKey(-3))
         result = cesar.encode_char('a')
         assert result == '^'
 
     def test_cesar_encodes_printables_properly_with_positive_rollover(self):
-        cesar = Cesar(38)
+        cesar = Cesar(ScalarEncryptionKey(7))
         result = cesar.encode_char('z')
-        assert result == ' '
+        assert result == '\x01'
 
     def test_cesar_encodes_printables_properly_with_positive_multiple_rollover(self):
-        cesar = Cesar(255)
+        cesar = Cesar(ScalarEncryptionKey(257))
         result = cesar.encode_char('z')
         assert result == '{'
 
     def test_cesar_encodes_printables_properly_with_negative_rollover(self):
-        cesar = Cesar(-6)
+        cesar = Cesar(ScalarEncryptionKey(-6))
         result = cesar.encode_char('&')
         assert result == ' '
 
     def test_cesar_encodes_printables_properly_with_negative_multiple_rollover(self):
-        cesar = Cesar(-255)
+        cesar = Cesar(ScalarEncryptionKey(-257))
         result = cesar.encode_char('&')
         assert result == '%'
 
@@ -58,6 +58,27 @@ class TestCesar:
 class TestXor:
 
     def test_xor_encodes_pritable_properly(self):
-        xor = Xor(3)
+        xor = Xor(ScalarEncryptionKey(3))
         result = xor.encode_char('a')
         assert result == 'b'
+
+
+class TestIterableEncryptionKey:
+
+    def test_iterator_is_looped(self):
+        i = IterableEncryptionKey([1, 2, 3])
+        assert i.get() == 1
+        assert i.get() == 2
+        assert i.get() == 3
+        assert i.get() == 1
+
+
+class TestScalarEncryptionKey:
+
+    def test_key_is_converted_to_int(self):
+        k = ScalarEncryptionKey('1')
+        assert k.get() == 49
+
+    def test_key_stays_int(self):
+        k = ScalarEncryptionKey(1)
+        assert k.get() == 1

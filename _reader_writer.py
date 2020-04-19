@@ -4,12 +4,8 @@ from abc import abstractmethod, ABC
 class Reader(ABC):
 
     @abstractmethod
-    def __init__(self, _input):
-        self._input = _input
-
     def read(self):
-        for char in self._input:
-            yield char
+        """This method shall be implemented."""
 
 
 class Writer(ABC):
@@ -28,7 +24,15 @@ class Writer(ABC):
 class StringReader(Reader):
 
     def __init__(self, input_string):
-        super(StringReader, self).__init__(input_string)
+        self._string = input_string
+
+
+    def read(self):
+        return self._get_char().__
+
+    def _get_char(self):
+        for ch in self._string:
+            yield ch
 
 
 class FileReader(Reader):
