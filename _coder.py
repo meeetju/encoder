@@ -50,11 +50,11 @@ class ScalarEncryptionKey:
     """Scalar encryption key."""
 
     def __init__(self, key):
-        self._key = key
+        self._initial_key = key
 
     def get(self):
         """Get encryption key in int format."""
-        return self._get_in_int_format(self._key)
+        return self._get_in_int_format(self._initial_key)
 
     @staticmethod
     def _get_in_int_format(key):
@@ -69,18 +69,18 @@ class IterableEncryptionKey(ScalarEncryptionKey):
     """Iterable Encryption Key."""
 
     def __init__(self, key):
-        self._key = key
-        self._next_key = self._get_next_key()
+        self._initial_key = key
+        self._key_iterator = self._get_next_key()
 
     def _get_next_key(self):
-        for k in self._key:
+        for k in self._initial_key:
             yield self._get_in_int_format(k)
 
     def get(self):
         """Get encryption key in int format."""
         try:
-            return self._next_key.__next__()
+            return self._key_iterator.__next__()
         except StopIteration:
-            self._next_key = self._get_next_key()
-            return self._next_key.__next__()
+            self._key_iterator = self._get_next_key()
+            return self._key_iterator.__next__()
 

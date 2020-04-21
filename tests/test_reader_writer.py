@@ -32,7 +32,7 @@ class TestFileReader:
     @pytest.fixture()
     def file_mock_set(self):
         with patch('builtins.open', new_callable=mock_open) as self.open_mock:
-            self.open_mock.return_value.read.return_value = 'dude lol'
+            self.open_mock.return_value.read.side_effect = ['d', 'u', 'd', 'e', ' ', 'l', 'o', 'l', None]
             yield
 
     def test_file_read_returns_correct_content(self, file_mock_set):

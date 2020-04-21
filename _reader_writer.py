@@ -8,58 +8,66 @@ class Reader(ABC):
         """This method shall be implemented."""
 
 
-class Writer(ABC):
-
-    def __init__(self):
-        self._output = []
-
-    def write(self, _input):
-        self._output.append(_input)
-
-    @abstractmethod
-    def get(self):
-        pass # pragma: no cover
-
-
 class StringReader(Reader):
 
     def __init__(self, input_string):
-        self._string = input_string
-
+        self._char_iterator = self._get_char(input_string)
 
     def read(self):
-        return self._get_char().__
+        return self._char_iterator
 
-    def _get_char(self):
-        for ch in self._string:
+    @staticmethod
+    def _get_char(string):
+        for ch in string:
             yield ch
 
 
 class FileReader(Reader):
 
     def __init__(self, path):
-        super(FileReader, self).__init__(self._get_file_content(path))
+        self._char_iterator = self._get_char_from_file(path)
 
     @staticmethod
-    def _get_file_content(path):
-        with open(path, 'r') as file:
-            return file.read()
+    def _get_char_from_file(path):
+        with open(path, 'rb') as file:
+            while True:
+                char = file.read(1)
+                if char:
+                    yield char
+                else:
+                    break
 
     def read(self):
-        for char in self._input:
-            yield char
+        return self._char_iterator
 
 
 class ConsoleReader(Reader):
 
     def __init__(self):
-        super(ConsoleReader, self).__init__(input("Provide text to encode: "))
+        self._char_iterator = self._get_char(input("Provide text to encode: "))
+
+    def read(self):
+        return self._char_iterator
+
+    @staticmethod
+    def _get_char(string):
+        for ch in string:
+            yield ch
+
+
+class Writer(ABC):
+
+    def write(self, _input):
+        """This method shall be implemented."""
 
 
 class StringWriter(Writer):
 
     def get(self):
         return ''.join(self._output)
+
+    def write(self, _input):
+        self._output.append(_input)
 
 
 class FileWriter(Writer):
