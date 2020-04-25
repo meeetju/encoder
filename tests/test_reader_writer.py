@@ -1,4 +1,4 @@
-from mock import patch, mock_open
+from mock import patch, mock_open, MagicMock
 import pytest
 
 from .._reader_writer import StringReader, StringWriter, FileReader, FileWriter, ConsoleReader, ConsoleWriter
@@ -32,7 +32,8 @@ class TestFileReader:
     @pytest.fixture()
     def file_mock_set(self):
         with patch('builtins.open', new_callable=mock_open) as self.open_mock:
-            self.open_mock.return_value.read.side_effect = ['d', 'u', 'd', 'e', ' ', 'l', 'o', 'l', None]
+            f = self.open_mock.return_value
+            f.read.side_effect = ['d', 'u', 'd', 'e', ' ', 'l', 'o', 'l', None]
             yield
 
     def test_file_read_returns_correct_content(self, file_mock_set):
@@ -50,15 +51,17 @@ class TestFileWriter:
     @pytest.fixture()
     def file_mock_set(self):
         with patch('builtins.open', new_callable=mock_open) as self.open_mock:
-            yield
+            f = self.open_mock.return_value
+            f.fileno.return_value = int(1)
+            with patch('os.fsync', MagicMock(return_value=None)):
+                yield
 
     def test_file_write_is_called_with_correct_content(self, file_mock_set):
 
         file = FileWriter('path')
-        file.write('blah')
-        file.get()
+        file.write('a')
 
-        self.open_mock.return_value.write.assert_called_once_with('blah')
+        self.open_mock.return_value.write.assert_called_once_with('a')
 
 
 class TestConsoleReader:
@@ -83,9 +86,8 @@ class TestConsoleWriter:
     def test_console_write_is_called_with_correct_content(self, capsys):
 
         console_out = ConsoleWriter()
-        console_out.write('indeed')
-        console_out.get()
+        console_out.write('A')
 
-        captured = capsys.readouterr()
+        out, _ = capsys.readouterr()
 
-        assert captured.out == 'indeed\n'
+        assert out == 'A'

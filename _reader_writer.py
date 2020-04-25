@@ -1,4 +1,6 @@
 from abc import abstractmethod, ABC
+from os import fsync
+import sys
 
 
 class Reader(ABC):
@@ -60,31 +62,39 @@ class Writer(ABC):
     def write(self, _input):
         """This method shall be implemented."""
 
+    def finish(self):
+        """This method should be implemented if any action needed."""
+
 
 class StringWriter(Writer):
 
-    def get(self):
-        return ''.join(self._output)
-
-    def write(self, _input):
-        self._output.append(_input)
-
-
-class FileWriter(Writer):
-
-    def __init__(self, path):
-        self.path = path
+    def __init__(self):
         self._output = []
 
     def write(self, _input):
         self._output.append(_input)
 
     def get(self):
-        with open(self.path, 'w') as file:
-            file.write(''.join(self._output))
+        return ''.join(self._output)
+
+
+class FileWriter(Writer):
+
+    def __init__(self, path):
+        self._file = open(path, 'w')
+
+    def write(self, _input):
+        self._file.write(_input)
+        self._file.flush()
+        fsync(self._file.fileno())
+
+    def finish(self):
+        self._file.close()
 
 
 class ConsoleWriter(Writer):
 
-    def get(self):
-        print(''.join(self._output))
+    @staticmethod
+    def write(_input):
+        sys.stdout.write(_input)
+        sys.stdout.flush()

@@ -1,8 +1,8 @@
-from mock import patch, mock_open
+from mock import patch, mock_open, MagicMock, call
 import pytest
 
 from .._coder import Cesar, Xor, IterableEncryptionKey, ScalarEncryptionKey
-from ..encoder import Encoder, main
+from .._encoder import Encoder, main
 from .._reader_writer import StringReader, StringWriter, FileReader, FileWriter
 
 
@@ -11,50 +11,75 @@ class TestEncoder:
     @pytest.fixture()
     def file_mock_set(self):
         with patch('builtins.open', new_callable=mock_open) as self.open_mock:
-            self.open_mock.return_value.read.side_effect = ['d', 'u', 'd', 'e', ' ', 'l', 'o', 'l', None]
-            yield
+            f = self.open_mock.return_value
+            f.read.side_effect = ['d', 'u', 'd', 'e', ' ', 'l', 'o', 'l', None]
+            f.fileno.return_value = int(1)
+            with patch('os.fsync', MagicMock(return_value=None)):
+                yield
 
     def test_string_is_cesar_encoded_to_string(self):
 
         encoder = Encoder(StringReader('dude lol'), StringWriter(), Cesar(ScalarEncryptionKey(2)))
-        encoder.encode()
-        result_string = encoder.get()
+        result_string = encoder.encode().get()
+
         assert result_string == 'fwfg"nqn'
 
     def test_file_is_cesar_encoded_to_string(self, file_mock_set):
 
         encoder = Encoder(FileReader('dude lol'), StringWriter(), Cesar(ScalarEncryptionKey(2)))
-        encoder.encode()
-        result_string = encoder.get()
+        result_string = encoder.encode().get()
 
         assert result_string == 'fwfg"nqn'
 
     def test_string_is_cesar_encoded_to_file(self, file_mock_set):
 
-        encoder = Encoder(StringReader('dude lol'), FileWriter('C:\\destination.txt'), Cesar(ScalarEncryptionKey(2)))
+        encoder = Encoder(StringReader('dude'), FileWriter('C:\\destination.txt'), Cesar(ScalarEncryptionKey(2)))
         encoder.encode()
-        encoder.get()
 
-        self.open_mock.return_value.write.assert_called_once_with('fwfg"nqn')
+        calls = [call('f'), call('w'), call('f'), call('g')]
+
+        self.open_mock.return_value.write.assert_has_calls(calls)
+        self.open_mock.return_value.close.assert_called_once()
 
     def test_string_is_xor_encoded_to_string(self):
 
         encoder = Encoder(StringReader('dude lol'), StringWriter(), Xor(ScalarEncryptionKey(3)))
-        encoder.encode()
-        result_string = encoder.get()
+        result_string = encoder.encode().get()
 
         assert result_string == 'gvgf#olo'
 
 
-# class TestMain:
-#
-#     @pytest.fixture()
-#     def sys_argv_mock_set(self):
-#         with patch('sys.argv', ['main', '--in_string=this works', '--out_console', '--cesar', '--key=1']):
-#             yield
-#
-#     def test_main(self, sys_argv_mock_set, capsys):
-#         main()
-#         captured = capsys.readouterr()
-#
-#         assert captured.out == "uijt!xpslt\n"
+class TestMain:
+
+    @pytest.fixture()
+    def sys_argv_mock_set(self):
+        with patch('sys.argv', ['main', '--in_string=this works', '--out_console', '--cesar', '--key=1']):
+            yield
+
+    def test_main_key(self, sys_argv_mock_set, capsys):
+        main()
+        out, _ = capsys.readouterr()
+
+        assert out == "uijt!xpslt"
+
+    @pytest.fixture()
+    def sys_argv_mock_set_keys_int(self):
+        with patch('sys.argv', ['main', '--in_string=this works', '--out_console', '--cesar', '--keys_int=1,1,1']):
+            yield
+
+    def test_main_keys_int(self, sys_argv_mock_set_keys_int, capsys):
+        main()
+        out, _ = capsys.readouterr()
+
+        assert out == "uijt!xpslt"
+
+    @pytest.fixture()
+    def sys_argv_mock_set_key_text(self):
+        with patch('sys.argv', ['main', '--in_string=abc', '--out_console', '--cesar', '--key_text=abc']):
+            yield
+
+    def test_main_key_text(self, sys_argv_mock_set_key_text, capsys):
+        main()
+        out, _ = capsys.readouterr()
+
+        assert out == "BDF"

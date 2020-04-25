@@ -1,5 +1,4 @@
 @startuml
-
 title Text Encoder
 
 class Main {
@@ -16,6 +15,8 @@ ArgParser -Up-> ConsoleReader
 ArgParser -Up-> ConsoleWriter
 ArgParser -Up-> Xor
 ArgParser -Up-> Cesar
+ArgParser -Up-> ScalarEncryptionKey
+ArgParser -Up-> IterableEncryptionKey
 
 class ArgParser {
   +get_reader()
@@ -52,7 +53,7 @@ abstract class Reader {
 
 abstract class Writer {
   {abstract} write()
-  {abstract} get()
+  {abstract} finish()
 }
 
 Reader <|-- StringReader
@@ -82,12 +83,27 @@ class StringWriter {
 
 class FileWriter {
   +write()
-  +get()
+  +finish()
 }
 
 class ConsoleWriter {
   +write()
+  +finish()
+}
+
+class EncryptionKey {
   +get()
 }
 
+class ScalarEncryptionKey {
+  +get()
+}
+
+class IterableEncryptionKey {
+  +get()
+}
+
+Coder -right-> EncryptionKey
+EncryptionKey <|-- ScalarEncryptionKey
+EncryptionKey <|-- IterableEncryptionKey
 @enduml

@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from _coder import Cesar, Xor
+from _coder import Cesar, Xor, ScalarEncryptionKey, IterableEncryptionKey
 from _reader_writer import StringWriter, StringReader, FileWriter, FileReader, ConsoleReader, ConsoleWriter
 
 
@@ -16,8 +16,13 @@ class Encoder:
             encoded = self._coder.encode_char(char)
             self._writer.write(encoded)
 
-    def get(self):
-        return self._writer.get()
+        self._writer.finish()
+
+        if self._writer_has_a_getter():
+            return self._writer
+
+    def _writer_has_a_getter(self):
+        return getattr(self._writer, "get", False)
 
 
 class ArgParser(ArgumentParser):
@@ -33,6 +38,8 @@ class ArgParser(ArgumentParser):
         self.add_argument('--cesar', action='store_true', help='Select the Cesar code')
         self.add_argument('--xor', action='store_true', help='Select the Xor code')
         self.add_argument('--key', type=int, default=0, help='Key to selected code')
+        self.add_argument('--keys_int', type=str, default=0, help='Vector of coma-separated int keys to selected code')
+        self.add_argument('--key_text', type=str, default=0, help='String of keys to selected code')
         self.arguments = self.parse_args()
 
     def get_reader(self):
@@ -57,11 +64,21 @@ class ArgParser(ArgumentParser):
 
     def get_coder(self):
         if self.arguments.cesar:
-            return Cesar(self.arguments.key)
+            return Cesar(self._get_key())
         elif self.arguments.xor:
-            return Xor(self.arguments.key)
+            return Xor(self._get_key())
         else:
             raise RuntimeError('No coder provided.')
+
+    def _get_key(self):
+        if self.arguments.key:
+            return ScalarEncryptionKey(self.arguments.key)
+        elif self.arguments.keys_int:
+            return IterableEncryptionKey([int(i) for i in self.arguments.keys_int.split(',')])
+        elif self.arguments.key_text:
+            return IterableEncryptionKey(self.arguments.key_text)
+        else:
+            raise RuntimeError('No key nor key_vector provided.')
 
 
 def main():
@@ -73,7 +90,6 @@ def main():
 
     encoder = Encoder(reader, writer, coder)
     encoder.encode()
-    encoder.get()
 
 
 if __name__ == '__main__':

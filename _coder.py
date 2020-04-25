@@ -45,7 +45,21 @@ class Xor(Coder):
         return chr(ord(_char) ^ self._xor_key.get())
 
 
-class ScalarEncryptionKey:
+class EncryptionKey:
+
+    def get(self):
+        """This method shall be implemented."""
+        raise NotImplementedError
+
+    @staticmethod
+    def _get_in_int_format(key):
+        if isinstance(key, int):
+            return key
+        else:
+            return ord(key)
+
+
+class ScalarEncryptionKey(EncryptionKey):
 
     """Scalar encryption key."""
 
@@ -56,15 +70,8 @@ class ScalarEncryptionKey:
         """Get encryption key in int format."""
         return self._get_in_int_format(self._initial_key)
 
-    @staticmethod
-    def _get_in_int_format(key):
-        if isinstance(key, int):
-            return key
-        else:
-            return ord(key)
 
-
-class IterableEncryptionKey(ScalarEncryptionKey):
+class IterableEncryptionKey(EncryptionKey):
 
     """Iterable Encryption Key."""
 
