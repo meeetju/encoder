@@ -4,6 +4,17 @@ from _coder import Cesar, Xor, ScalarEncryptionKey, IterableEncryptionKey
 from _reader_writer import StringWriter, StringReader, FileWriter, FileReader, ConsoleReader, ConsoleWriter
 
 
+class HeadedTextEncoder:
+
+    def __init__(self, reader, writer, coder):
+        self._header_rewriter = Rewriter(reader, writer)
+        self._message_encoder = Encoder(reader, writer, coder)
+
+    def encode(self):
+        self._header_rewriter.rewrite()
+        return self._message_encoder.encode()
+
+
 class Encoder:
 
     def __init__(self, reader, writer, coder):
@@ -11,10 +22,13 @@ class Encoder:
         self._writer = writer
         self._coder = coder
 
+    def _encode(self, char):
+        return self._coder.encode_char(char)
+
     def encode(self):
         for char in self._reader.read():
-            encoded = self._coder.encode_char(char)
-            self._writer.write(encoded)
+            encoded_char = self._encode(char)
+            self._writer.write(encoded_char)
 
         self._writer.finish()
 
@@ -23,6 +37,23 @@ class Encoder:
 
     def _writer_has_a_getter(self):
         return getattr(self._writer, "get", False)
+
+
+class Rewriter:
+
+    def __init__(self, reader, writer):
+        self._reader = reader
+        self._writer = writer
+
+    def rewrite(self):
+        for char in self._reader.read():
+            self._writer.write(char)
+            if self._is_end_of_header(char):
+                break
+
+    @staticmethod
+    def _is_end_of_header(char):
+        return char == '\n'
 
 
 class ArgParser(ArgumentParser):
@@ -40,6 +71,7 @@ class ArgParser(ArgumentParser):
         self.add_argument('--key', type=int, default=0, help='Key to selected code')
         self.add_argument('--keys_int', type=str, default=0, help='Vector of coma-separated int keys to selected code')
         self.add_argument('--key_text', type=str, default=0, help='String of keys to selected code')
+        self.add_argument('--headed', action='store_true', help='Message has header')
         self.arguments = self.parse_args()
 
     def get_reader(self):
@@ -50,7 +82,7 @@ class ArgParser(ArgumentParser):
         elif self.arguments.in_console:
             return ConsoleReader()
         else:
-            raise RuntimeError('No input provided.')
+            raise RuntimeError('No reader provided.')
 
     def get_writer(self):
         if self.arguments.out_string:
@@ -60,7 +92,7 @@ class ArgParser(ArgumentParser):
         elif self.arguments.out_console:
             return ConsoleWriter()
         else:
-            raise RuntimeError('No output provided.')
+            raise RuntimeError('No writer provided.')
 
     def get_coder(self):
         if self.arguments.cesar:
@@ -80,6 +112,9 @@ class ArgParser(ArgumentParser):
         else:
             raise RuntimeError('No key nor key_vector provided.')
 
+    def is_headed(self):
+        return self.arguments.headed
+
 
 def main():
 
@@ -87,8 +122,12 @@ def main():
     reader = parser.get_reader()
     writer = parser.get_writer()
     coder = parser.get_coder()
+    is_headed = parser.is_headed()
 
-    encoder = Encoder(reader, writer, coder)
+    if is_headed:
+        encoder = HeadedTextEncoder(reader, writer, coder)
+    else:
+        encoder = Encoder(reader, writer, coder)
     encoder.encode()
 
 

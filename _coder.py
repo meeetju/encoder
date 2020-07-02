@@ -12,6 +12,7 @@ class Cesar(Coder):
 
     MIN_ASCII_VALUE = 0
     MAX_ASCII_VALUE = 127
+    ASCII_TABLE_SIZE = MAX_ASCII_VALUE + 1
 
     def __init__(self, key):
         self._cesar_key = key
@@ -27,9 +28,9 @@ class Cesar(Coder):
     def _normalize_key_if_printables_range_exceeded(self, cesar_key):
         normalized_key = cesar_key
         if abs(cesar_key) > self.MAX_ASCII_VALUE:
-            normalized_key = int((abs(cesar_key) % (self.MAX_ASCII_VALUE + 1))*(cesar_key/abs(cesar_key)))
-        if normalized_key < 0:
-            normalized_key = self.MAX_ASCII_VALUE + 1 + normalized_key
+            normalized_key = int((abs(cesar_key) % self.ASCII_TABLE_SIZE)*(cesar_key/abs(cesar_key)))
+        if normalized_key < self.MIN_ASCII_VALUE:
+            normalized_key += self.ASCII_TABLE_SIZE
         return normalized_key
 
 
