@@ -11,7 +11,7 @@ class HeadedTextEncoder:
         self._body_encoder = body_encoder
 
     def encode(self):
-        self._header_encoder.encode(lambda x: self._is_end_of_header(x))
+        self._header_encoder.encode(self._is_end_of_header)
         return self._body_encoder.encode()
 
     @staticmethod
