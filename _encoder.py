@@ -6,13 +6,17 @@ from _reader_writer import StringWriter, StringReader, FileWriter, FileReader, C
 
 class HeadedTextEncoder:
 
-    def __init__(self, reader, writer, coder):
-        self._header_rewriter = Rewriter(reader, writer)
-        self._message_encoder = Encoder(reader, writer, coder)
+    def __init__(self, header_encoder, body_encoder):
+        self._header_encoder = header_encoder
+        self._body_encoder = body_encoder
 
     def encode(self):
-        self._header_rewriter.rewrite()
-        return self._message_encoder.encode()
+        self._header_encoder.encode(lambda x: self._is_end_of_header(x))
+        return self._body_encoder.encode()
+
+    @staticmethod
+    def _is_end_of_header(char):
+        return char == '\n'
 
 
 class Encoder:
@@ -25,7 +29,7 @@ class Encoder:
     def _encode(self, char):
         return self._coder.encode_char(char)
 
-    def encode(self):
+    def encode(self, stop_predicate=None):
         for char in self._reader.read():
             encoded_char = self._encode(char)
             self._writer.write(encoded_char)
@@ -39,21 +43,18 @@ class Encoder:
         return getattr(self._writer, "get", False)
 
 
-class Rewriter:
+class NullEncoder:
 
-    def __init__(self, reader, writer):
+    def __init__(self, reader, writer, coder):
         self._reader = reader
         self._writer = writer
+        self._coder = coder
 
-    def rewrite(self):
+    def encode(self, stop_predicate):
         for char in self._reader.read():
             self._writer.write(char)
-            if self._is_end_of_header(char):
+            if stop_predicate(char):
                 break
-
-    @staticmethod
-    def _is_end_of_header(char):
-        return char == '\n'
 
 
 class ArgParser(ArgumentParser):
@@ -125,7 +126,9 @@ def main():
     is_headed = parser.is_headed()
 
     if is_headed:
-        encoder = HeadedTextEncoder(reader, writer, coder)
+        header_encoder = NullEncoder(reader, writer, None)
+        body_encoder = Encoder(reader, writer, coder)
+        encoder = HeadedTextEncoder(header_encoder, body_encoder)
     else:
         encoder = Encoder(reader, writer, coder)
     encoder.encode()

@@ -2,7 +2,7 @@ from mock import patch, mock_open, MagicMock, call
 import pytest
 
 from .._coder import Cesar, Xor, IterableEncryptionKey, ScalarEncryptionKey
-from .._encoder import Encoder, HeadedTextEncoder, main
+from .._encoder import Encoder, HeadedTextEncoder, NullEncoder, main
 from .._reader_writer import StringReader, StringWriter, FileReader, FileWriter
 
 
@@ -50,7 +50,14 @@ class TestEncoder:
 
     def test_header_is_not_encoded(self):
 
-        encoder = HeadedTextEncoder(StringReader('some header \n dude lol'), StringWriter(), Xor(ScalarEncryptionKey(3)))
+        reader = StringReader('some header \n dude lol')
+        writer = StringWriter()
+        coder = Xor(ScalarEncryptionKey(3))
+
+        header_encoder = NullEncoder(reader, writer, None)
+        body_encoder = Encoder(reader, writer, coder)
+
+        encoder = HeadedTextEncoder(header_encoder, body_encoder)
         result_string = encoder.encode().get()
 
         assert result_string == 'some header \n#gvgf#olo'
