@@ -1,16 +1,23 @@
+"""Encode input text into convenient output."""
+# pylint: disable=too-few-public-methods
+
 from argparse import ArgumentParser
 
 from _coder import Cesar, Xor, ScalarEncryptionKey, IterableEncryptionKey
-from _reader_writer import StringWriter, StringReader, FileWriter, FileReader, ConsoleReader, ConsoleWriter
+from _reader_writer import (StringWriter, StringReader, FileWriter,
+                            FileReader, ConsoleReader, ConsoleWriter)
 
 
 class HeadedTextEncoder:
+
+    """Encode text leaving header not encoded."""
 
     def __init__(self, header_encoder, body_encoder):
         self._header_encoder = header_encoder
         self._body_encoder = body_encoder
 
     def encode(self):
+        """Encode text."""
         self._header_encoder.encode(self._is_end_of_header)
         return self._body_encoder.encode()
 
@@ -21,6 +28,9 @@ class HeadedTextEncoder:
 
 class Encoder:
 
+    """Encode text."""
+    # pylint: disable=inconsistent-return-statements
+
     def __init__(self, reader, writer, coder):
         self._reader = reader
         self._writer = writer
@@ -29,7 +39,13 @@ class Encoder:
     def _encode(self, char):
         return self._coder.encode_char(char)
 
-    def encode(self, stop_predicate=None):
+    def encode(self):
+        """Encode text.
+
+        :return: text writer
+        :rtype: Writer
+
+        """
         for char in self._reader.read():
             encoded_char = self._encode(char)
             self._writer.write(encoded_char)
@@ -45,12 +61,22 @@ class Encoder:
 
 class NullEncoder:
 
-    def __init__(self, reader, writer, coder):
+    """Rewrite input text."""
+
+    def __init__(self, reader, writer, coder=None):
         self._reader = reader
         self._writer = writer
         self._coder = coder
 
     def encode(self, stop_predicate):
+        """Encode text.
+
+        :param stop_predicate: predicate
+        :type stop_predicate: function
+        :return: text writer
+        :rtype: Writer
+
+        """
         for char in self._reader.read():
             self._writer.write(char)
             if stop_predicate(char):
@@ -58,6 +84,8 @@ class NullEncoder:
 
 
 class ArgParser(ArgumentParser):
+
+    """Parse input arguments."""
 
     def __init__(self):
         super(ArgParser, self).__init__()
@@ -70,54 +98,62 @@ class ArgParser(ArgumentParser):
         self.add_argument('--cesar', action='store_true', help='Select the Cesar code')
         self.add_argument('--xor', action='store_true', help='Select the Xor code')
         self.add_argument('--key', type=int, default=0, help='Key to selected code')
-        self.add_argument('--keys_int', type=str, default=0, help='Vector of coma-separated int keys to selected code')
-        self.add_argument('--key_text', type=str, default=0, help='String of keys to selected code')
+        self.add_argument('--keys_int', type=str, default=0,
+                          help='Vector of coma-separated int keys to selected code')
+        self.add_argument('--key_text', type=str, default=0,
+                          help='String of keys to selected code')
         self.add_argument('--headed', action='store_true', help='Message has header')
-        self.arguments = self.parse_args()
+        self._arguments = self.parse_args()
 
     def get_reader(self):
-        if self.arguments.in_string:
-            return StringReader(self.arguments.in_string)
-        elif self.arguments.in_file:
-            return FileReader(self.arguments.in_file)
-        elif self.arguments.in_console:
+        """Get selected text reader."""
+        if self._arguments.in_string:
+            return StringReader(self._arguments.in_string)
+        if self._arguments.in_file:
+            return FileReader(self._arguments.in_file)
+        if self._arguments.in_console:
             return ConsoleReader()
-        else:
-            raise RuntimeError('No reader provided.')
+        raise RuntimeError('No reader provided.')
 
     def get_writer(self):
-        if self.arguments.out_string:
+        """Get selected text writer."""
+        if self._arguments.out_string:
             return StringWriter()
-        elif self.arguments.out_file:
-            return FileWriter(self.arguments.out_file)
-        elif self.arguments.out_console:
+        if self._arguments.out_file:
+            return FileWriter(self._arguments.out_file)
+        if self._arguments.out_console:
             return ConsoleWriter()
-        else:
-            raise RuntimeError('No writer provided.')
+        raise RuntimeError('No writer provided.')
 
     def get_coder(self):
-        if self.arguments.cesar:
+        """Get selected text coder."""
+        if self._arguments.cesar:
             return Cesar(self._get_key())
-        elif self.arguments.xor:
+        if self._arguments.xor:
             return Xor(self._get_key())
-        else:
-            raise RuntimeError('No coder provided.')
+        raise RuntimeError('No coder provided.')
 
     def _get_key(self):
-        if self.arguments.key:
-            return ScalarEncryptionKey(self.arguments.key)
-        elif self.arguments.keys_int:
-            return IterableEncryptionKey([int(i) for i in self.arguments.keys_int.split(',')])
-        elif self.arguments.key_text:
-            return IterableEncryptionKey(self.arguments.key_text)
-        else:
-            raise RuntimeError('No key nor key_vector provided.')
+        if self._arguments.key:
+            return ScalarEncryptionKey(self._arguments.key)
+        if self._arguments.keys_int:
+            return IterableEncryptionKey([int(i) for i in self._arguments.keys_int.split(',')])
+        if self._arguments.key_text:
+            return IterableEncryptionKey(self._arguments.key_text)
+        raise RuntimeError('No key nor key_vector provided.')
 
     def is_headed(self):
-        return self.arguments.headed
+        """Is text headed.
+
+        :return: is_headed
+        :rtype: bool
+        """
+        return self._arguments.headed
 
 
 def main():
+
+    """Console for text Encoder."""
 
     parser = ArgParser()
     reader = parser.get_reader()
@@ -126,7 +162,7 @@ def main():
     is_headed = parser.is_headed()
 
     if is_headed:
-        header_encoder = NullEncoder(reader, writer, None)
+        header_encoder = NullEncoder(reader, writer)
         body_encoder = Encoder(reader, writer, coder)
         encoder = HeadedTextEncoder(header_encoder, body_encoder)
     else:

@@ -54,7 +54,7 @@ class TestEncoder:
         writer = StringWriter()
         coder = Xor(ScalarEncryptionKey(3))
 
-        header_encoder = NullEncoder(reader, writer, None)
+        header_encoder = NullEncoder(reader, writer)
         body_encoder = Encoder(reader, writer, coder)
 
         encoder = HeadedTextEncoder(header_encoder, body_encoder)

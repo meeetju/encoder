@@ -1,7 +1,18 @@
+"""Set of letter coders"""
+# pylint: disable=too-few-public-methods
+
 from abc import abstractmethod, ABC
 
 
+def _get_in_int_format(key):
+    if isinstance(key, int):
+        return key
+    return ord(key)
+
+
 class Coder(ABC):
+
+    """Coder interface."""
 
     @abstractmethod
     def encode_char(self, char):
@@ -9,6 +20,8 @@ class Coder(ABC):
 
 
 class Cesar(Coder):
+
+    """Encode letter with Cesar code."""
 
     MIN_ASCII_VALUE = 0
     MAX_ASCII_VALUE = 127
@@ -28,13 +41,16 @@ class Cesar(Coder):
     def _normalize_key_if_printables_range_exceeded(self, cesar_key):
         normalized_key = cesar_key
         if abs(cesar_key) > self.MAX_ASCII_VALUE:
-            normalized_key = int((abs(cesar_key) % self.ASCII_TABLE_SIZE)*(cesar_key/abs(cesar_key)))
+            normalized_key = int(
+                (abs(cesar_key) % self.ASCII_TABLE_SIZE)*(cesar_key/abs(cesar_key)))
         if normalized_key < self.MIN_ASCII_VALUE:
             normalized_key += self.ASCII_TABLE_SIZE
         return normalized_key
 
 
 class Xor(Coder):
+
+    """Encode letter with Xor code."""
 
     def __init__(self, key):
         self._xor_key = key
@@ -48,16 +64,11 @@ class Xor(Coder):
 
 class EncryptionKey:
 
+    """Encryption Key Interface."""
+
     def get(self):
         """This method shall be implemented."""
         raise NotImplementedError
-
-    @staticmethod
-    def _get_in_int_format(key):
-        if isinstance(key, int):
-            return key
-        else:
-            return ord(key)
 
 
 class ScalarEncryptionKey(EncryptionKey):
@@ -69,7 +80,7 @@ class ScalarEncryptionKey(EncryptionKey):
 
     def get(self):
         """Get encryption key in int format."""
-        return self._get_in_int_format(self._initial_key)
+        return _get_in_int_format(self._initial_key)
 
 
 class IterableEncryptionKey(EncryptionKey):
@@ -82,7 +93,7 @@ class IterableEncryptionKey(EncryptionKey):
 
     def _get_next_key(self):
         for k in self._initial_key:
-            yield self._get_in_int_format(k)
+            yield _get_in_int_format(k)
 
     def get(self):
         """Get encryption key in int format."""
@@ -91,4 +102,3 @@ class IterableEncryptionKey(EncryptionKey):
         except StopIteration:
             self._key_iterator = self._get_next_key()
             return self._key_iterator.__next__()
-
