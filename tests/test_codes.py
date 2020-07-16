@@ -1,16 +1,14 @@
 """Test encoding methods."""
 # pylint: disable=too-few-public-methods
 # pylint: disable=missing-function-docstring
+# pylint: disable=missing-class-docstring
 # pylint: disable=no-self-use
 
-import pytest
 
 from text_encoder._coder import Cesar, Xor, IterableEncryptionKey, ScalarEncryptionKey
 
 
 class TestCesar:
-
-    """Test Cesar Coder"""
 
     def test_cesar_encodes_printables_properly_with_positive_key(self):
         cesar = Cesar(ScalarEncryptionKey(3))
@@ -45,8 +43,6 @@ class TestCesar:
 
 class TestXor:
 
-    """Test Xor Coder."""
-
     def test_xor_encodes_printable_properly(self):
         xor = Xor(ScalarEncryptionKey(3))
         result = xor.encode_char('a')
@@ -54,8 +50,6 @@ class TestXor:
 
 
 class TestIterableEncryptionKey:
-
-    """Test Iterable Encryption Key."""
 
     def test_iterator_is_looped(self):
         i = IterableEncryptionKey([1, 2, 3])
@@ -66,8 +60,6 @@ class TestIterableEncryptionKey:
 
 
 class TestScalarEncryptionKey:
-
-    """Test Scalar Encryption Key."""
 
     def test_key_is_converted_to_int(self):
         k = ScalarEncryptionKey('1')

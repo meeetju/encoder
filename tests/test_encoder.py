@@ -1,7 +1,10 @@
 """Test encoder."""
 # pylint: disable=too-few-public-methods
 # pylint: disable=missing-function-docstring
+# pylint: disable=missing-class-docstring
 # pylint: disable=no-self-use
+# pylint: disable=unused-argument
+# pylint: disable=attribute-defined-outside-init
 
 from mock import patch, mock_open, MagicMock, call
 import pytest
@@ -13,11 +16,8 @@ from text_encoder._reader_writer import StringReader, StringWriter, FileReader, 
 
 class TestEncoder:
 
-    """Test Encoder."""
-
     @pytest.fixture()
-    def file_mock_set(self):
-        # pylint: disable=attribute-defined-outside-init
+    def file_read_mock(self):
 
         with patch('builtins.open', new_callable=mock_open) as self.open_mock:
             file_ = self.open_mock.return_value
@@ -33,16 +33,14 @@ class TestEncoder:
 
         assert result_string == 'fwfg"nqn'
 
-    def test_file_is_cesar_encoded_to_string(self, file_mock_set):
-        # pylint: disable=unused-argument
+    def test_file_is_cesar_encoded_to_string(self, file_read_mock):
 
         encoder = Encoder(FileReader('dude lol'), StringWriter(), Cesar(ScalarEncryptionKey(2)))
         result_string = encoder.encode().get()
 
         assert result_string == 'fwfg"nqn'
 
-    def test_string_is_cesar_encoded_to_file(self, file_mock_set):
-        # pylint: disable=unused-argument
+    def test_string_is_cesar_encoded_to_file(self, file_read_mock):
 
         encoder = Encoder(StringReader('dude'),
                           FileWriter('C:\\destination.txt'),
@@ -78,16 +76,13 @@ class TestEncoder:
 
 class TestMain:
 
-    """Test encoder console."""
-
     @pytest.fixture()
-    def sys_argv_mock_set(self):
+    def sysargv_mock(self):
         with patch('sys.argv',
                    ['main', '--in_string=this works', '--out_console', '--cesar', '--key=1']):
             yield
 
-    def test_main_key(self, sys_argv_mock_set, capsys):
-        # pylint: disable=unused-argument
+    def test_string_is_cesar_with_scalar_key_encoded_to_console(self, sysargv_mock, capsys):
 
         main()
         out, _ = capsys.readouterr()
@@ -95,14 +90,14 @@ class TestMain:
         assert out == "uijt!xpslt"
 
     @pytest.fixture()
-    def sys_argv_mock_set_keys_int(self):
+    def sysargv_int_keys_list_mock(self):
         with patch('sys.argv',
                    ['main', '--in_string=this works', '--out_console',
                     '--cesar', '--keys_int=1,1,1']):
             yield
 
-    def test_main_keys_int(self, sys_argv_mock_set_keys_int, capsys):
-        # pylint: disable=unused-argument
+    def test_string_is_cesar_with_keys_list_encoded_to_console(self, sysargv_int_keys_list_mock,
+                                                               capsys):
 
         main()
         out, _ = capsys.readouterr()
@@ -110,13 +105,28 @@ class TestMain:
         assert out == "uijt!xpslt"
 
     @pytest.fixture()
-    def sys_argv_mock_set_key_text(self):
-        with patch('sys.argv',
-                   ['main', '--in_string=abc', '--out_console', '--cesar', '--key_text=abc']):
-            yield
+    def sysargv_in_out_consoles_mock(self):
+        with patch('sys.argv', ['main', '--in_console', '--out_console', '--cesar', '--key=3']):
+            with patch('builtins.input', return_value='abc'):
+                yield
 
-    def test_main_key_text(self, sys_argv_mock_set_key_text, capsys):
-        # pylint: disable=unused-argument
+    def test_console_input_is_cesar_encoded_to_console(self, sysargv_in_out_consoles_mock, capsys):
+
+        main()
+        out, _ = capsys.readouterr()
+
+        assert out == "def"
+
+    @pytest.fixture()
+    def sysargv_in_file_mock(self):
+        # pylint: disable=line-too-long
+        with patch('sys.argv', ['main', '--in_file=c/in_file.txt', '--out_console', '--cesar', '--key_text=abc']):
+            with patch('builtins.open', new_callable=mock_open) as self.open_mock:
+                _file = self.open_mock.return_value
+                _file.read.side_effect = ['a', 'b', 'c', None]
+                yield
+
+    def test_file_is_cesar_with_char_keys_encoded_to_console(self, sysargv_in_file_mock, capsys):
 
         main()
         out, _ = capsys.readouterr()
@@ -124,13 +134,42 @@ class TestMain:
         assert out == "BDF"
 
     @pytest.fixture()
-    def sys_argv_mock_set_no_reader(self):
+    def sysargv_out_file_mock(self):
+        # pylint: disable=line-too-long
+        with patch('sys.argv', ['main', '--in_string=abc', '--out_file=c/out_file.txt', '--cesar', '--key_text=abc']):
+            with patch('builtins.open', new_callable=mock_open) as self.open_mock:
+                self.open_mock.return_value.fileno.return_value = int(1)
+                with patch('os.fsync', MagicMock(return_value=None)):
+                    yield
+
+    def test_string_is_cesar_with_char_keys_encoded_to_file(self, sysargv_out_file_mock):
+        main()
+
+        calls = [call('B'), call('D'), call('F')]
+
+        self.open_mock.return_value.write.assert_has_calls(calls)
+
+    @pytest.fixture()
+    def sysargv_headed_input_mock(self):
+        # pylint: disable=line-too-long
+        with patch('sys.argv', ['main', '--in_string=aaa\naaa', '--out_console', '--xor', '--key=3', '--headed']):
+            yield
+
+    def test_string_is_cesar_encoded_except_for_header_to_console(self, sysargv_headed_input_mock,
+                                                                  capsys):
+
+        main()
+        out, _ = capsys.readouterr()
+
+        assert out == "aaa\nbbb"
+
+    @pytest.fixture()
+    def sysargv_no_reader_mock(self):
         with patch('sys.argv',
                    ['main', '--out_console', '--cesar', '--key=1']):
             yield
 
-    def test_runtime_error_raised_if_no_input_provided(self, sys_argv_mock_set_no_reader):
-        # pylint: disable=unused-argument
+    def test_runtime_error_raised_if_no_input_provided(self, sysargv_no_reader_mock):
 
         with pytest.raises(RuntimeError) as error:
             main()
@@ -138,13 +177,12 @@ class TestMain:
         assert 'No reader provided.' in error.value.args
 
     @pytest.fixture()
-    def sys_argv_mock_set_no_writer(self):
+    def sysargv_no_writer_mock(self):
         with patch('sys.argv',
                    ['main', '--in_string=abc', '--cesar', '--key=1']):
             yield
 
-    def test_runtime_error_raised_if_no_output_provided(self, sys_argv_mock_set_no_writer):
-        # pylint: disable=unused-argument
+    def test_runtime_error_raised_if_no_output_provided(self, sysargv_no_writer_mock):
 
         with pytest.raises(RuntimeError) as error:
             main()
@@ -152,13 +190,12 @@ class TestMain:
         assert 'No writer provided.' in error.value.args
 
     @pytest.fixture()
-    def sys_argv_mock_set_no_coder(self):
+    def sysargv_no_coder_mock(self):
         with patch('sys.argv',
                    ['main', '--in_string=abc', '--out_console', '--key=1']):
             yield
 
-    def test_runtime_error_raised_if_no_coder_provided(self, sys_argv_mock_set_no_coder):
-        # pylint: disable=unused-argument
+    def test_runtime_error_raised_if_no_coder_provided(self, sysargv_no_coder_mock):
 
         with pytest.raises(RuntimeError) as error:
             main()
@@ -166,13 +203,12 @@ class TestMain:
         assert 'No coder provided.' in error.value.args
 
     @pytest.fixture()
-    def sys_argv_mock_set_no_key(self):
+    def sysargv_no_key_mock(self):
         with patch('sys.argv',
                    ['main', '--in_string=abc', '--out_console', '--cesar']):
             yield
 
-    def test_runtime_error_raised_if_no_key_provided(self, sys_argv_mock_set_no_key):
-        # pylint: disable=unused-argument
+    def test_runtime_error_raised_if_no_key_provided(self, sysargv_no_key_mock):
 
         with pytest.raises(RuntimeError) as error:
             main()

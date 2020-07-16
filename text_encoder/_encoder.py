@@ -4,8 +4,7 @@
 from argparse import ArgumentParser
 
 from ._coder import Cesar, Xor, ScalarEncryptionKey, IterableEncryptionKey
-from ._reader_writer import (StringWriter, StringReader, FileWriter,
-                             FileReader, ConsoleReader, ConsoleWriter)
+from ._reader_writer import (StringReader, FileWriter, FileReader, ConsoleReader, ConsoleWriter)
 
 
 class HeadedTextEncoder:
@@ -92,7 +91,6 @@ class ArgParser(ArgumentParser):
         self.add_argument('--in_string', type=type(''), default=None, help='Input string')
         self.add_argument('--in_file', type=type(''), default=None, help='Input file path')
         self.add_argument('--in_console', action='store_true', help='Console input')
-        self.add_argument('--out_string', action='store_true', help='Return string')
         self.add_argument('--out_file', type=type(''), default=None, help='Output file path')
         self.add_argument('--out_console', action='store_true', help='Console output')
         self.add_argument('--cesar', action='store_true', help='Select the Cesar code')
@@ -117,8 +115,6 @@ class ArgParser(ArgumentParser):
 
     def get_writer(self):
         """Get selected text writer."""
-        if self._arguments.out_string:
-            return StringWriter()
         if self._arguments.out_file:
             return FileWriter(self._arguments.out_file)
         if self._arguments.out_console:
@@ -171,4 +167,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main()  # pragma no cover

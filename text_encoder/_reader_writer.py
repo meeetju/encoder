@@ -51,7 +51,7 @@ class FileReader(Reader):
                 if char:
                     yield char
                 else:
-                    break
+                    break  # pragma no cover
 
     def read(self):
         """Read file one byte at a time.
