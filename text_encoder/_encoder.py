@@ -3,9 +3,9 @@
 
 from argparse import ArgumentParser
 
-from _coder import Cesar, Xor, ScalarEncryptionKey, IterableEncryptionKey
-from _reader_writer import (StringWriter, StringReader, FileWriter,
-                            FileReader, ConsoleReader, ConsoleWriter)
+from ._coder import Cesar, Xor, ScalarEncryptionKey, IterableEncryptionKey
+from ._reader_writer import (StringWriter, StringReader, FileWriter,
+                             FileReader, ConsoleReader, ConsoleWriter)
 
 
 class HeadedTextEncoder:

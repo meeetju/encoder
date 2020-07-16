@@ -62,13 +62,13 @@ class Xor(Coder):
         return chr(ord(_char) ^ self._xor_key.get())
 
 
-class EncryptionKey:
+class EncryptionKey(ABC):
 
     """Encryption Key Interface."""
 
+    @abstractmethod
     def get(self):
         """This method shall be implemented."""
-        raise NotImplementedError
 
 
 class ScalarEncryptionKey(EncryptionKey):
