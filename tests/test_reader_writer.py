@@ -75,7 +75,7 @@ class TestConsoleReader:
 
     @pytest.fixture()
     def console_mock_set(self):
-        with patch('builtins.input', lambda _: 'test'):
+        with patch('builtins.input', return_value='test'):
             yield
 
     def test_console_reader_returns_correct_content(self, console_mock_set):
