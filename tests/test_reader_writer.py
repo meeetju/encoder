@@ -58,8 +58,8 @@ class TestFileWriter:
     def file_mock_set(self):
 
         with patch('builtins.open', new_callable=mock_open) as self.open_mock:
-            file_ = self.open_mock.return_value
-            file_.fileno.return_value = int(1)
+            _file = self.open_mock.return_value
+            _file.fileno.return_value = int(1)
             with patch('os.fsync', MagicMock(return_value=None)):
                 yield
 

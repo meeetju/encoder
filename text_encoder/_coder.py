@@ -3,6 +3,8 @@
 
 from abc import abstractmethod, ABC
 
+from ._printables import MIN_ASCII_CODE, MAX_ASCII_CODE, ASCII_PRINTABLES_CODES, ASCII_CODES_TABLE_SIZE
+
 
 def _get_in_int_format(key):
     if isinstance(key, int):
@@ -23,10 +25,6 @@ class Cesar(Coder):
 
     """Encode letter with Cesar code."""
 
-    MIN_ASCII_VALUE = 0
-    MAX_ASCII_VALUE = 127
-    ASCII_TABLE_SIZE = MAX_ASCII_VALUE + 1
-
     def __init__(self, key):
         self._cesar_key = key
 
@@ -35,18 +33,21 @@ class Cesar(Coder):
 
     def _get_new_ascii_code(self, _char):
         current_code = ord(_char)
-        new_code = current_code + self._cesar_key.get()
-        return self._normalize_key_if_printables_range_exceeded(new_code)
+        cesar_key = self._normalize_key(self._cesar_key.get())
+        new_index = ASCII_PRINTABLES_CODES.index(current_code) + cesar_key
+        if new_index > ASCII_PRINTABLES_CODES.index(MAX_ASCII_CODE):
+            new_code = ASCII_PRINTABLES_CODES[new_index - ASCII_CODES_TABLE_SIZE]
+        elif new_index < ASCII_PRINTABLES_CODES.index(MIN_ASCII_CODE):
+            new_code = ASCII_PRINTABLES_CODES[ASCII_CODES_TABLE_SIZE + new_index]
+        else:
+            new_code = ASCII_PRINTABLES_CODES[new_index]
+        return new_code
 
-    def _normalize_key_if_printables_range_exceeded(self, cesar_key):
-        normalized_key = cesar_key
-        if abs(cesar_key) > self.MAX_ASCII_VALUE:
-            normalized_key = int(
-                (abs(cesar_key) % self.ASCII_TABLE_SIZE)*(cesar_key/abs(cesar_key)))
-        if normalized_key < self.MIN_ASCII_VALUE:
-            normalized_key += self.ASCII_TABLE_SIZE
-        return normalized_key
-
+    @staticmethod
+    def _normalize_key(key):
+        if abs(key) >= ASCII_CODES_TABLE_SIZE:
+            return (abs(key) % ASCII_CODES_TABLE_SIZE) * int(abs(key)/key)
+        return key
 
 class Xor(Coder):
 

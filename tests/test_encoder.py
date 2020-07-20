@@ -131,7 +131,7 @@ class TestMain:
         main()
         out, _ = capsys.readouterr()
 
-        assert out == "BDF"
+        assert out == "ceg"
 
     @pytest.fixture()
     def sysargv_out_file_mock(self):
@@ -145,7 +145,7 @@ class TestMain:
     def test_string_is_cesar_with_char_keys_encoded_to_file(self, sysargv_out_file_mock):
         main()
 
-        calls = [call('B'), call('D'), call('F')]
+        calls = [call('c'), call('e'), call('g')]
 
         self.open_mock.return_value.write.assert_has_calls(calls)
 
