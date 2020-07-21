@@ -1,31 +1,27 @@
 """Encode input text into convenient output."""
 # pylint: disable=too-few-public-methods
 
+from abc import abstractmethod, ABC
 from argparse import ArgumentParser
 
-from ._coder import Cesar, Xor, ScalarEncryptionKey, IterableEncryptionKey
-from ._reader_writer import (StringReader, FileWriter, FileReader, ConsoleReader, ConsoleWriter)
+from ._codes import Cesar, Xor, ScalarEncryptionKey, IterableEncryptionKey
+from ._reader_writer import StringReader, FileWriter, FileReader, ConsoleReader, ConsoleWriter
 
 
-class HeadedTextEncoder:
+class BaseEncoder(ABC):
 
-    """Encode text leaving header not encoded."""
+    """Encoder interface."""
 
-    def __init__(self, header_encoder, body_encoder):
-        self._header_encoder = header_encoder
-        self._body_encoder = body_encoder
-
+    @abstractmethod
     def encode(self):
-        """Encode text."""
-        self._header_encoder.encode(self._is_end_of_header)
-        return self._body_encoder.encode()
+        """This method shall be implemented."""
 
-    @staticmethod
-    def _is_end_of_header(char):
-        return char == '\n'
+    @abstractmethod
+    def finish(self):
+        """This method shall be implemented."""
 
 
-class Encoder:
+class Encoder(BaseEncoder):
 
     """Encode text."""
     # pylint: disable=inconsistent-return-statements
@@ -49,23 +45,18 @@ class Encoder:
             encoded_char = self._encode(char)
             self._writer.write(encoded_char)
 
-        self._writer.finish()
-
-        if self._writer_has_a_getter():
-            return self._writer
-
-    def _writer_has_a_getter(self):
-        return getattr(self._writer, "get", False)
+    def finish(self):
+        """Execute writer finish actions."""
+        return self._writer.finish()
 
 
-class NullEncoder:
+class NullEncoder(BaseEncoder):
 
     """Rewrite input text."""
 
-    def __init__(self, reader, writer, coder=None):
+    def __init__(self, reader, writer):
         self._reader = reader
         self._writer = writer
-        self._coder = coder
 
     def encode(self, stop_predicate):
         """Encode text.
@@ -80,6 +71,32 @@ class NullEncoder:
             self._writer.write(char)
             if stop_predicate(char):
                 break
+
+    def finish(self):
+        """Execute writer finish actions."""
+        return self._writer.finish()
+
+
+class HeadedTextEncoder(BaseEncoder):
+
+    """Encode text leaving header not encoded."""
+
+    def __init__(self, header_encoder, body_encoder):
+        self._header_encoder = header_encoder
+        self._body_encoder = body_encoder
+
+    def encode(self):
+        """Encode text."""
+        self._header_encoder.encode(self._is_end_of_header)
+        return self._body_encoder.encode()
+
+    @staticmethod
+    def _is_end_of_header(char):
+        return char == '\n'
+
+    def finish(self):
+        """Execute writer finish actions."""
+        return self._body_encoder.finish()
 
 
 class ArgParser(ArgumentParser):
@@ -164,6 +181,7 @@ def main():
     else:
         encoder = Encoder(reader, writer, coder)
     encoder.encode()
+    encoder.finish()
 
 
 if __name__ == '__main__':

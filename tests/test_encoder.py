@@ -9,7 +9,7 @@
 from mock import patch, mock_open, MagicMock, call
 import pytest
 
-from text_encoder._coder import Cesar, Xor, ScalarEncryptionKey
+from text_encoder._codes import Cesar, Xor, ScalarEncryptionKey
 from text_encoder._encoder import Encoder, HeadedTextEncoder, NullEncoder, main
 from text_encoder._reader_writer import StringReader, StringWriter, FileReader, FileWriter
 
@@ -21,47 +21,61 @@ class TestEncoder:
 
         with patch('builtins.open', new_callable=mock_open) as self.open_mock:
             file_ = self.open_mock.return_value
-            file_.read.side_effect = ['d', 'u', 'd', 'e', ' ', 'l', 'o', 'l', None]
+            file_.read.side_effect = ['t', 'e', 's', 't', ' ', 'm', 'e', None]
             file_.fileno.return_value = int(1)
             with patch('os.fsync', MagicMock(return_value=None)):
                 yield
 
+    def test_not_printable_char_is_not_cesar_encoded(self):
+
+        NULL = chr(0x01)
+
+        encoder = Encoder(StringReader('a{}c'.format(NULL)), StringWriter(), Cesar(ScalarEncryptionKey(2)))
+        encoder.encode()
+        result_string = encoder.finish().get()
+
+        assert result_string == 'c{}e'.format(NULL)
+
     def test_string_is_cesar_encoded_to_string(self):
 
-        encoder = Encoder(StringReader('dude lol'), StringWriter(), Cesar(ScalarEncryptionKey(2)))
-        result_string = encoder.encode().get()
+        encoder = Encoder(StringReader('test me'), StringWriter(), Cesar(ScalarEncryptionKey(2)))
+        encoder.encode()
+        result_string = encoder.finish().get()
 
-        assert result_string == 'fwfg"nqn'
+        assert result_string == 'vguv"og'
 
     def test_file_is_cesar_encoded_to_string(self, file_read_mock):
 
-        encoder = Encoder(FileReader('dude lol'), StringWriter(), Cesar(ScalarEncryptionKey(2)))
-        result_string = encoder.encode().get()
+        encoder = Encoder(FileReader('path'), StringWriter(), Cesar(ScalarEncryptionKey(2)))
+        encoder.encode()
+        result_string = encoder.finish().get()
 
-        assert result_string == 'fwfg"nqn'
+        assert result_string == 'vguv"og'
 
     def test_string_is_cesar_encoded_to_file(self, file_read_mock):
 
-        encoder = Encoder(StringReader('dude'),
-                          FileWriter('C:\\destination.txt'),
+        encoder = Encoder(StringReader('test'),
+                          FileWriter('path'),
                           Cesar(ScalarEncryptionKey(2)))
         encoder.encode()
+        encoder.finish()
 
-        calls = [call('f'), call('w'), call('f'), call('g')]
+        calls = [call('v'), call('g'), call('u'), call('v')]
 
         self.open_mock.return_value.write.assert_has_calls(calls)
         self.open_mock.return_value.close.assert_called_once()
 
     def test_string_is_xor_encoded_to_string(self):
 
-        encoder = Encoder(StringReader('dude lol'), StringWriter(), Xor(ScalarEncryptionKey(3)))
-        result_string = encoder.encode().get()
+        encoder = Encoder(StringReader('test me'), StringWriter(), Xor(ScalarEncryptionKey(3)))
+        encoder.encode()
+        result_string = encoder.finish().get()
 
-        assert result_string == 'gvgf#olo'
+        assert result_string == 'wfpw#nf'
 
     def test_header_is_not_encoded(self):
 
-        reader = StringReader('some header \n dude lol')
+        reader = StringReader('some header \n test me')
         writer = StringWriter()
         coder = Xor(ScalarEncryptionKey(3))
 
@@ -69,9 +83,25 @@ class TestEncoder:
         body_encoder = Encoder(reader, writer, coder)
 
         encoder = HeadedTextEncoder(header_encoder, body_encoder)
-        result_string = encoder.encode().get()
+        encoder.encode()
+        result_string = encoder.finish().get()
 
-        assert result_string == 'some header \n#gvgf#olo'
+        assert result_string == 'some header \n#wfpw#nf'
+
+
+class TestNullEncoder:
+
+    @staticmethod
+    def test_null_encoder_does_not_code():
+
+        reader = StringReader('test')
+        writer = StringWriter()
+
+        encoder = NullEncoder(reader, writer)
+        encoder.encode(stop_predicate=lambda x: x == '\n')
+        result_string = encoder.finish().get()
+
+        assert result_string == 'test'
 
 
 class TestMain:

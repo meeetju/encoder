@@ -2,7 +2,7 @@
 
 from text_encoder._encoder import Encoder
 from text_encoder._reader_writer import StringReader, FileWriter, ConsoleWriter, StringWriter
-from text_encoder._coder import Cesar, ScalarEncryptionKey
+from text_encoder._codes import Cesar, ScalarEncryptionKey
 
 e = Encoder(StringReader('dude lol'), FileWriter(r'D:\new_one.txt'), Cesar(ScalarEncryptionKey(2)))
 e.encode()

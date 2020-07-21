@@ -3,7 +3,8 @@
 
 from abc import abstractmethod, ABC
 
-from ._printables import MIN_ASCII_CODE, MAX_ASCII_CODE, ASCII_PRINTABLES_CODES, ASCII_CODES_TABLE_SIZE
+from ._printables import (min_ascii_code, max_ascii_code, ascii_printables_codes,
+                          ascii_codes_table_size, ascii_printables_chars)
 
 
 def _get_in_int_format(key):
@@ -29,25 +30,26 @@ class Cesar(Coder):
         self._cesar_key = key
 
     def encode_char(self, _char):
-        return chr(self._get_new_ascii_code(_char))
+        if _char in ascii_printables_chars:
+            return chr(self._get_new_ascii_code(_char))
+        return _char
 
     def _get_new_ascii_code(self, _char):
         current_code = ord(_char)
         cesar_key = self._normalize_key(self._cesar_key.get())
-        new_index = ASCII_PRINTABLES_CODES.index(current_code) + cesar_key
-        if new_index > ASCII_PRINTABLES_CODES.index(MAX_ASCII_CODE):
-            new_code = ASCII_PRINTABLES_CODES[new_index - ASCII_CODES_TABLE_SIZE]
-        elif new_index < ASCII_PRINTABLES_CODES.index(MIN_ASCII_CODE):
-            new_code = ASCII_PRINTABLES_CODES[ASCII_CODES_TABLE_SIZE + new_index]
-        else:
-            new_code = ASCII_PRINTABLES_CODES[new_index]
-        return new_code
+        new_index = ascii_printables_codes.index(current_code) + cesar_key
+        if new_index > ascii_printables_codes.index(max_ascii_code):
+            return ascii_printables_codes[new_index - ascii_codes_table_size]
+        if new_index < ascii_printables_codes.index(min_ascii_code):
+            return ascii_printables_codes[ascii_codes_table_size + new_index]
+        return ascii_printables_codes[new_index]
 
     @staticmethod
     def _normalize_key(key):
-        if abs(key) >= ASCII_CODES_TABLE_SIZE:
-            return (abs(key) % ASCII_CODES_TABLE_SIZE) * int(abs(key)/key)
+        if abs(key) >= ascii_codes_table_size:
+            return (abs(key) % ascii_codes_table_size) * int(abs(key) / key)
         return key
+
 
 class Xor(Coder):
 

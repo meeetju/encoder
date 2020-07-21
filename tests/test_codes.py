@@ -5,8 +5,8 @@
 # pylint: disable=no-self-use
 
 
-from text_encoder._coder import Cesar, Xor, IterableEncryptionKey, ScalarEncryptionKey
-from text_encoder._printables import ASCII_CODES_TABLE_SIZE
+from text_encoder._codes import Cesar, Xor, IterableEncryptionKey, ScalarEncryptionKey
+from text_encoder._printables import ascii_codes_table_size
 
 
 class TestCesar:
@@ -27,7 +27,7 @@ class TestCesar:
         assert result == '"'
 
     def test_cesar_encodes_printables_properly_with_positive_multiple_rollover(self):
-        cesar = Cesar(ScalarEncryptionKey(2 * ASCII_CODES_TABLE_SIZE + 7))
+        cesar = Cesar(ScalarEncryptionKey(2 * ascii_codes_table_size + 7))
         result = cesar.encode_char('z')
         assert result == '"'
 
@@ -37,7 +37,7 @@ class TestCesar:
         assert result == '~'
 
     def test_cesar_encodes_printables_properly_with_negative_multiple_rollover(self):
-        cesar = Cesar(ScalarEncryptionKey(-2 * ASCII_CODES_TABLE_SIZE - 7))
+        cesar = Cesar(ScalarEncryptionKey(-2 * ascii_codes_table_size - 7))
         result = cesar.encode_char('&')
         assert result == '~'
 
