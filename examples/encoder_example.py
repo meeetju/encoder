@@ -4,11 +4,14 @@ from text_encoder._encoder import Encoder
 from text_encoder._reader_writer import StringReader, FileWriter, ConsoleWriter, StringWriter
 from text_encoder._codes import Cesar, ScalarEncryptionKey
 
-e = Encoder(StringReader('dude lol'), FileWriter(r'D:\new_one.txt'), Cesar(ScalarEncryptionKey(2)))
-e.encode()
+encoder = Encoder(StringReader('test me'), FileWriter(r'C:\Documents\encoding_output.txt'), Cesar(ScalarEncryptionKey(2)))
+encoder.encode()
+encoder.finish()
 
-e = Encoder(StringReader('dude lol'), ConsoleWriter(), Cesar(ScalarEncryptionKey(2)))
-e.encode()
+encoder = Encoder(StringReader('test me'), ConsoleWriter(), Cesar(ScalarEncryptionKey(2)))
+encoder.encode()
+encoder.finish()
 
-e = Encoder(StringReader('dude lol'), StringWriter(), Cesar(ScalarEncryptionKey(2)))
-print(e.encode().get())
+encoder = Encoder(StringReader('test me'), StringWriter(), Cesar(ScalarEncryptionKey(2)))
+encoder.encode()
+print(encoder.finish().get())
