@@ -91,10 +91,6 @@ class Writer(ABC):
     def write(self, _input):
         """This method shall be implemented."""
 
-    @abstractmethod
-    def finish(self):
-        """This method shall be implemented."""
-
 
 class StringWriter(Writer):
 
@@ -106,10 +102,6 @@ class StringWriter(Writer):
     def write(self, _input):
         """Write letter to string"""
         self._output.append(_input)
-
-    def finish(self):
-        """Finish string operations."""
-        return self
 
     def get(self):
         """Get full string output.
@@ -146,7 +138,3 @@ class ConsoleWriter(Writer):
         """Write letter to console."""
         sys.stdout.write(_input)
         sys.stdout.flush()
-
-    def finish(self):
-        """Finish console operations."""
-        pass

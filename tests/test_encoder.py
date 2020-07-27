@@ -10,7 +10,7 @@ from mock import patch, mock_open, MagicMock, call
 import pytest
 
 from text_encoder._codes import Cesar, Xor, ScalarEncryptionKey
-from text_encoder._encoder import Encoder, HeadedTextEncoder, NullEncoder, main
+from text_encoder._encoder import Encoder, HeadedEncoder, NullCoder, main
 from text_encoder._reader_writer import StringReader, StringWriter, FileReader, FileWriter
 
 
@@ -29,36 +29,43 @@ class TestEncoder:
     def test_not_printable_char_is_not_cesar_encoded(self):
 
         NULL = chr(0x01)
+        string_writer = StringWriter()
 
-        encoder = Encoder(StringReader('a{}c'.format(NULL)), StringWriter(), Cesar(ScalarEncryptionKey(2)))
+        encoder = Encoder(StringReader('a{}c'.format(NULL)), string_writer, Cesar(ScalarEncryptionKey(2)))
         encoder.encode()
-        result_string = encoder.finish().get()
+        result_string = string_writer.get()
 
         assert result_string == 'c{}e'.format(NULL)
 
     def test_string_is_cesar_encoded_to_string(self):
 
-        encoder = Encoder(StringReader('test me'), StringWriter(), Cesar(ScalarEncryptionKey(2)))
+        string_writer = StringWriter()
+
+        encoder = Encoder(StringReader('test me'), string_writer, Cesar(ScalarEncryptionKey(2)))
         encoder.encode()
-        result_string = encoder.finish().get()
+        result_string = string_writer.get()
 
         assert result_string == 'vguv"og'
 
     def test_file_is_cesar_encoded_to_string(self, file_read_mock):
 
-        encoder = Encoder(FileReader('path'), StringWriter(), Cesar(ScalarEncryptionKey(2)))
+        string_writer = StringWriter()
+
+        encoder = Encoder(FileReader('path'), string_writer, Cesar(ScalarEncryptionKey(2)))
         encoder.encode()
-        result_string = encoder.finish().get()
+        result_string = string_writer.get()
 
         assert result_string == 'vguv"og'
 
     def test_string_is_cesar_encoded_to_file(self, file_read_mock):
 
+        file_writer = FileWriter('path')
+
         encoder = Encoder(StringReader('test'),
-                          FileWriter('path'),
+                          file_writer,
                           Cesar(ScalarEncryptionKey(2)))
         encoder.encode()
-        encoder.finish()
+        file_writer.finish()
 
         calls = [call('v'), call('g'), call('u'), call('v')]
 
@@ -67,39 +74,55 @@ class TestEncoder:
 
     def test_string_is_xor_encoded_to_string(self):
 
-        encoder = Encoder(StringReader('test me'), StringWriter(), Xor(ScalarEncryptionKey(3)))
+        string_writer = StringWriter()
+
+        encoder = Encoder(StringReader('test me'), string_writer, Xor(ScalarEncryptionKey(3)))
         encoder.encode()
-        result_string = encoder.finish().get()
+        result_string = string_writer.get()
 
         assert result_string == 'wfpw#nf'
 
     def test_header_is_not_encoded(self):
 
-        reader = StringReader('some header \n test me')
-        writer = StringWriter()
+        string_reader = StringReader('some header \n test me')
+        string_writer = StringWriter()
         coder = Xor(ScalarEncryptionKey(3))
+        is_end_of_header = lambda x: x =='\n'
 
-        header_encoder = NullEncoder(reader, writer)
-        body_encoder = Encoder(reader, writer, coder)
+        header_rewriter = NullCoder(string_reader, string_writer)
+        body_encoder = Encoder(string_reader, string_writer, coder)
 
-        encoder = HeadedTextEncoder(header_encoder, body_encoder)
+        encoder = HeadedEncoder(header_rewriter, body_encoder, is_end_of_header)
         encoder.encode()
-        result_string = encoder.finish().get()
+        result_string = string_writer.get()
 
         assert result_string == 'some header \n#wfpw#nf'
+
+    def test_encoding_is_stopped_on_stop_predicate(self):
+
+        string_reader = StringReader('aaaaabccccc')
+        strint_writer = StringWriter()
+        coder = Cesar(ScalarEncryptionKey(1))
+        is_end_of_encoding = lambda x: x =='b'
+
+        encoder = Encoder(string_reader, strint_writer, coder)
+        encoder.encode(is_end_of_encoding)
+        result_string = strint_writer.get()
+
+        assert result_string == 'bbbbbc'
 
 
 class TestNullEncoder:
 
     @staticmethod
-    def test_null_encoder_does_not_code():
+    def test_null_encoder_does_not_encode():
 
-        reader = StringReader('test')
-        writer = StringWriter()
+        string_reader = StringReader('test')
+        string_writer = StringWriter()
 
-        encoder = NullEncoder(reader, writer)
-        encoder.encode(stop_predicate=lambda x: x == '\n')
-        result_string = encoder.finish().get()
+        null_coder = NullCoder(string_reader, string_writer)
+        null_coder.encode(stop_predicate=lambda x: x == '\n')
+        result_string = string_writer.get()
 
         assert result_string == 'test'
 

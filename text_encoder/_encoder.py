@@ -34,18 +34,13 @@ class BaseEncoder(ABC):
     """Encoder interface."""
 
     @abstractmethod
-    def encode(self):
-        """This method shall be implemented."""
-
-    @abstractmethod
-    def finish(self):
+    def encode(self, stop_predicate):
         """This method shall be implemented."""
 
 
 class Encoder(BaseEncoder):
 
-    """Encode text."""
-    # pylint: disable=inconsistent-return-statements
+    """Encode input from reader."""
 
     def __init__(self, reader, writer, coder):
         self._reader = reader
@@ -56,91 +51,76 @@ class Encoder(BaseEncoder):
         return self._coder.encode_char(char)
 
     @time_it
-    def encode(self):
-        """Encode text.
+    def encode(self, stop_predicate=lambda x: False):
+        """Encode input from reader.
 
-        :return: text writer
-        :rtype: Writer
+        :param stop_predicate: predicate
+        :type stop_predicate: function
 
         """
         for char in self._reader.read():
             encoded_char = self._encode(char)
             self._writer.write(encoded_char)
-
-    def finish(self):
-        """Execute writer finish actions."""
-        return self._writer.finish()
+            if stop_predicate(char):
+                return
 
 
-class NullEncoder(BaseEncoder):
+class NullCoder(BaseEncoder):
 
-    """Rewrite input text."""
+    """Rewrite reader input to output."""
 
     def __init__(self, reader, writer):
         self._reader = reader
         self._writer = writer
 
-    def encode(self, stop_predicate):
-        """Encode text.
+    def encode(self,  stop_predicate=lambda x: False):
+        """Rewrite reader input to output until stop condition is met.
 
         :param stop_predicate: predicate
         :type stop_predicate: function
-        :return: text writer
-        :rtype: Writer
 
         """
         for char in self._reader.read():
             self._writer.write(char)
             if stop_predicate(char):
-                break
-
-    def finish(self):
-        """Execute writer finish actions."""
-        return self._writer.finish()
+                return
 
 
-class HeadedTextEncoder(BaseEncoder):
+class HeadedEncoder(BaseEncoder):
 
-    """Encode text leaving header not encoded."""
+    """Encode body, leaving header not encoded."""
 
-    def __init__(self, header_encoder, body_encoder):
+    def __init__(self, header_encoder, body_encoder, is_end_of_header_predicate):
         self._header_encoder = header_encoder
         self._body_encoder = body_encoder
+        self._is_end_of_header_predicate = is_end_of_header_predicate
 
-    def encode(self):
-        """Encode text."""
-        self._header_encoder.encode(self._is_end_of_header)
-        return self._body_encoder.encode()
-
-    @staticmethod
-    def _is_end_of_header(char):
-        return char == '\n'
-
-    def finish(self):
-        """Execute writer finish actions."""
-        return self._body_encoder.finish()
+    def encode(self, stop_predicate=lambda x: False):
+        """Encode body."""
+        self._header_encoder.encode(lambda x: stop_predicate(x) or self._is_end_of_header_predicate(x))
+        self._body_encoder.encode(stop_predicate)
 
 
-class ArgParser(ArgumentParser):
+class ParseConsoleArguments(ArgumentParser):
 
     """Parse input arguments."""
 
-    def __init__(self):
-        super(ArgParser, self).__init__()
-        self.add_argument('--in_string', type=type(''), default=None, help='Input string')
-        self.add_argument('--in_file', type=type(''), default=None, help='Input file path')
-        self.add_argument('--in_console', action='store_true', help='Console input')
-        self.add_argument('--out_file', type=type(''), default=None, help='Output file path')
-        self.add_argument('--out_console', action='store_true', help='Console output')
-        self.add_argument('--cesar', action='store_true', help='Select the Cesar code')
-        self.add_argument('--xor', action='store_true', help='Select the Xor code')
-        self.add_argument('--key', type=int, default=0, help='Key to selected code')
-        self.add_argument('--keys_int', type=str, default=0,
+    def __init__(self, parser):
+        self.parser = parser
+        self.parser.add_argument('--in_string', type=type(''), default=None, help='Input string')
+        self.parser.add_argument('--in_file', type=type(''), default=None, help='Input file path')
+        self.parser.add_argument('--in_console', action='store_true', help='Console input')
+        self.parser.add_argument('--out_file', type=type(''), default=None, help='Output file path')
+        self.parser.add_argument('--out_console', action='store_true', help='Console output')
+        self.parser.add_argument('--cesar', action='store_true', help='Select the Cesar code')
+        self.parser.add_argument('--xor', action='store_true', help='Select the Xor code')
+        self.parser.add_argument('--key', type=int, default=0, help='Key to selected code')
+        self.parser.add_argument('--keys_int', type=str, default=0,
                           help='Vector of coma-separated int keys to selected code')
-        self.add_argument('--key_text', type=str, default=0,
+        self.parser.add_argument('--key_text', type=str, default=0,
                           help='String of keys to selected code')
-        self.add_argument('--headed', action='store_true', help='Message has header')
-        self._arguments = self.parse_args()
+        self.parser.add_argument('--headed', action='store_true', help='Message has header')
+        self._arguments = self.parser.parse_args()
 
     def get_reader(self):
         """Get selected text reader."""
@@ -189,21 +169,28 @@ class ArgParser(ArgumentParser):
 def main():
 
     """Console for text Encoder."""
-
-    parser = ArgParser()
+    arg_parser = ArgumentParser()
+    parser = ParseConsoleArguments(arg_parser)
     reader = parser.get_reader()
     writer = parser.get_writer()
     coder = parser.get_coder()
     is_headed = parser.is_headed()
 
     if is_headed:
-        header_encoder = NullEncoder(reader, writer)
+
+        is_end_of_header = lambda x: x == '\n'
+
+        header_rewriter = NullCoder(reader, writer)
         body_encoder = Encoder(reader, writer, coder)
-        encoder = HeadedTextEncoder(header_encoder, body_encoder)
+        encoder = HeadedEncoder(header_rewriter, body_encoder, is_end_of_header)
     else:
         encoder = Encoder(reader, writer, coder)
     encoder.encode()
-    encoder.finish()
+
+    if isinstance(writer, FileWriter):
+        writer.finish()
+    else:
+        pass
 
 
 if __name__ == '__main__':
