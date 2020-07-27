@@ -94,14 +94,56 @@ class HeadedEncoder(BaseEncoder):
         self._header_encoder = header_encoder
         self._body_encoder = body_encoder
         self._is_end_of_header_predicate = is_end_of_header_predicate
+        self._is_end_of_header_reached = False
+
+    def _is_end_of_header(self, char):
+        self._is_end_of_header_reached = self._is_end_of_header_predicate(char)
+        return self._is_end_of_header_reached
 
     def encode(self, stop_predicate=lambda x: False):
         """Encode body."""
-        self._header_encoder.encode(lambda x: stop_predicate(x) or self._is_end_of_header_predicate(x))
-        self._body_encoder.encode(stop_predicate)
+        self._header_encoder.encode(lambda x: stop_predicate(x) or self._is_end_of_header(x))
+        if self._is_end_of_header_reached:
+            self._body_encoder.encode(stop_predicate)
 
 
-class ParseConsoleArguments(ArgumentParser):
+class EncodingState:
+
+    """Encoding states."""
+
+    START = 1
+    END = 2
+
+
+class EncodingObserver:
+
+    """Encoding observer."""
+
+    def __init__(self):
+        self._finish_functions = []
+
+    def update(self, state):
+        """Update with new state
+
+        :param state: state of encoding
+        :type state: int
+
+        """
+        if state == EncodingState.END:
+            for func in self._finish_functions:
+                func()
+
+    def register_finish_function(self, func):
+        """Register finish function.
+
+        :param func: finish function to be executed
+        :type func: function
+
+        """
+        self._finish_functions.append(func)
+
+
+class ParseConsoleArguments:
 
     """Parse input arguments."""
 
@@ -132,9 +174,11 @@ class ParseConsoleArguments(ArgumentParser):
             return ConsoleReader()
         raise RuntimeError('No reader provided.')
 
-    def get_writer(self):
+    def get_writer(self, observer):
         """Get selected text writer."""
         if self._arguments.out_file:
+            file_writer = FileWriter(self._arguments.out_file)
+            observer.register_finish_function(file_writer.finish)
             return FileWriter(self._arguments.out_file)
         if self._arguments.out_console:
             return ConsoleWriter()
@@ -171,8 +215,11 @@ def main():
     """Console for text Encoder."""
     arg_parser = ArgumentParser()
     parser = ParseConsoleArguments(arg_parser)
+    encoding_observer = EncodingObserver()
+
     reader = parser.get_reader()
-    writer = parser.get_writer()
+    writer = parser.get_writer(encoding_observer)
+
     coder = parser.get_coder()
     is_headed = parser.is_headed()
 
@@ -180,17 +227,14 @@ def main():
 
         is_end_of_header = lambda x: x == '\n'
 
-        header_rewriter = NullCoder(reader, writer)
+        header_encoder = NullCoder(reader, writer)
         body_encoder = Encoder(reader, writer, coder)
-        encoder = HeadedEncoder(header_rewriter, body_encoder, is_end_of_header)
+        encoder = HeadedEncoder(header_encoder, body_encoder, is_end_of_header)
     else:
         encoder = Encoder(reader, writer, coder)
     encoder.encode()
 
-    if isinstance(writer, FileWriter):
-        writer.finish()
-    else:
-        pass
+    encoding_observer.update(EncodingState.END)
 
 
 if __name__ == '__main__':

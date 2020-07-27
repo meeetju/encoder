@@ -118,6 +118,7 @@ class FileWriter(Writer):
 
     def __init__(self, path):
         self._file = open(path, 'w')
+        self._observer = None
 
     def write(self, _input):
         """Write letter to file."""

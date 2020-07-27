@@ -98,6 +98,22 @@ class TestEncoder:
 
         assert result_string == 'some header \n#wfpw#nf'
 
+    def test_encoding_stopped_on_header(self):
+
+        string_reader = StringReader('some header \n test me')
+        string_writer = StringWriter()
+        coder = Xor(ScalarEncryptionKey(3))
+        is_end_of_header = lambda x: x =='\n'
+
+        header_rewriter = NullCoder(string_reader, string_writer)
+        body_encoder = Encoder(string_reader, string_writer, coder)
+
+        encoder = HeadedEncoder(header_rewriter, body_encoder, is_end_of_header)
+        encoder.encode(lambda x: x == 'd')
+        result_string = string_writer.get()
+
+        assert result_string == 'some head'
+
     def test_encoding_is_stopped_on_stop_predicate(self):
 
         string_reader = StringReader('aaaaabccccc')
@@ -201,6 +217,7 @@ class TestMain:
         calls = [call('c'), call('e'), call('g')]
 
         self.open_mock.return_value.write.assert_has_calls(calls)
+        self.open_mock.return_value.close.assert_called_once()
 
     @pytest.fixture()
     def sysargv_headed_input_mock(self):
