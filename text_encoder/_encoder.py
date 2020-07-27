@@ -178,8 +178,8 @@ class ParseConsoleArguments:
         """Get selected text writer."""
         if self._arguments.out_file:
             file_writer = FileWriter(self._arguments.out_file)
-            observer.register_finish_function(file_writer.finish)
-            return FileWriter(self._arguments.out_file)
+            observer.register_finish_function(lambda : file_writer.finish())
+            return file_writer
         if self._arguments.out_console:
             return ConsoleWriter()
         raise RuntimeError('No writer provided.')
