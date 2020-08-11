@@ -92,6 +92,15 @@ class Writer(ABC):
         """This method shall be implemented."""
 
 
+class ProcessDoneObserver(ABC):
+
+    """Process Done Observer interface."""
+
+    @abstractmethod
+    def finish(self):
+        """This method shall be implemented."""
+
+
 class StringWriter(Writer):
 
     """Write text to string output."""
@@ -112,7 +121,7 @@ class StringWriter(Writer):
         return ''.join(self._output)
 
 
-class FileWriter(Writer):
+class FileWriter(Writer, ProcessDoneObserver):
 
     """Write text to file output."""
 

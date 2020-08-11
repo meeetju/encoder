@@ -7,7 +7,7 @@ import logging
 import time
 
 from ._codes import Cesar, Xor, ScalarEncryptionKey, IterableEncryptionKey
-from ._reader_writer import StringReader, FileWriter, FileReader, ConsoleReader, ConsoleWriter
+from ._reader_writer import StringReader, FileWriter, FileReader, ConsoleReader, ConsoleWriter, ProcessDoneObserver
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
@@ -107,40 +107,24 @@ class HeadedEncoder(BaseEncoder):
             self._body_encoder.encode(stop_predicate)
 
 
-class EncodingState:
+class EncodingDoneSubject:
 
-    """Encoding states."""
-
-    START = 1
-    END = 2
-
-
-class EncodingObserver:
-
-    """Encoding observer."""
+    """Encoding done subject."""
 
     def __init__(self):
-        self._finish_functions = []
+        self._observers = set()
 
-    def update(self, state):
-        """Update with new state
+    def notify_observers(self):
+        """Notify observers to finish."""
+        for observer in self._observers:
+            observer.finish()
 
-        :param state: state of encoding
-        :type state: int
-
-        """
-        if state == EncodingState.END:
-            for func in self._finish_functions:
-                func()
-
-    def register_finish_function(self, func):
-        """Register finish function.
-
-        :param func: finish function to be executed
-        :type func: function
-
-        """
-        self._finish_functions.append(func)
+    def register_observer(self, observer):
+        """Register observer."""
+        if isinstance(observer, ProcessDoneObserver):
+            self._observers.add(observer)
+        else:
+            raise TypeError('Not ProcessDoneObserver type')
 
 
 class ParseConsoleArguments:
@@ -174,11 +158,11 @@ class ParseConsoleArguments:
             return ConsoleReader()
         raise RuntimeError('No reader provided.')
 
-    def get_writer(self, observer):
+    def get_writer(self, subject):
         """Get selected text writer."""
         if self._arguments.out_file:
             file_writer = FileWriter(self._arguments.out_file)
-            observer.register_finish_function(lambda : file_writer.finish())
+            subject.register_observer(file_writer)
             return file_writer
         if self._arguments.out_console:
             return ConsoleWriter()
@@ -215,10 +199,10 @@ def main():
     """Console for text Encoder."""
     arg_parser = ArgumentParser()
     parser = ParseConsoleArguments(arg_parser)
-    encoding_observer = EncodingObserver()
+    encoding_done_subject = EncodingDoneSubject()
 
     reader = parser.get_reader()
-    writer = parser.get_writer(encoding_observer)
+    writer = parser.get_writer(encoding_done_subject)
 
     coder = parser.get_coder()
     is_headed = parser.is_headed()
@@ -234,7 +218,7 @@ def main():
         encoder = Encoder(reader, writer, coder)
     encoder.encode()
 
-    encoding_observer.update(EncodingState.END)
+    encoding_done_subject.notify_observers()
 
 
 if __name__ == '__main__':
