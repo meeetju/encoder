@@ -1,19 +1,19 @@
 """Encode input text into convenient output."""
 # pylint: disable=too-few-public-methods
 
-from abc import abstractmethod, ABC
 from argparse import ArgumentParser
 import logging
 
 from text_encoder._codes import Cesar, Xor, ScalarEncryptionKey, IterableEncryptionKey
-from text_encoder._readers_writers import StringReader, FileWriter, FileReader, ConsoleReader, ConsoleWriter
+from text_encoder._readers_writers import (StringReader, FileWriter, FileReader,
+                                           ConsoleReader, ConsoleWriter)
 from text_encoder._encoders import Encoder, HeadedEncoder, NullCoder
 from text_encoder._encoding_process import EncodingDoneObservable
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 
-class CmdArgumentsParser(object):
+class CmdArgumentsParser:
 
     """Parse input arguments."""
 
@@ -28,9 +28,9 @@ class CmdArgumentsParser(object):
         self.parser.add_argument('--xor', action='store_true', help='Select the Xor code')
         self.parser.add_argument('--key', type=int, default=0, help='Key to selected code')
         self.parser.add_argument('--keys_int', type=str, default=0,
-                          help='Vector of coma-separated int keys to selected code')
+                                 help='Vector of coma-separated int keys to selected code')
         self.parser.add_argument('--key_text', type=str, default=0,
-                          help='String of keys to selected code')
+                                 help='String of keys to selected code')
         self.parser.add_argument('--headed', action='store_true', help='Message has header')
         self._arguments = self.parser.parse_args()
 
@@ -44,7 +44,7 @@ class CmdArgumentsParser(object):
         return self._arguments
 
 
-class CmdEncoderFactory(object):
+class CmdEncoderFactory:
 
     """Command line Encoder factory."""
 

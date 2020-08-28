@@ -2,8 +2,6 @@
 hide empty methods
 hide empty attributes
 
-title Encoders
-
 abstract class BaseEncoder {
   {abstract}encode()
 }

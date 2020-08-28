@@ -1,9 +1,9 @@
 """Set of printable characters."""
 
-from string import ascii_letters, digits,  punctuation
+from string import ascii_letters, digits, punctuation
 
-ascii_printables_chars = r""" {0}{1}{2}""".format(digits, ascii_letters, punctuation)
-_ascii_printables_codes = [ord(printable) for printable in ascii_printables_chars]
+ASCII_PRINTABLES_CHARS = r""" {0}{1}{2}""".format(digits, ascii_letters, punctuation)
+_ascii_printables_codes = [ord(printable) for printable in ASCII_PRINTABLES_CHARS]
 
 _ascii_printables_codes.sort()
 min_ascii_code = _ascii_printables_codes[0]

@@ -3,8 +3,8 @@
 
 from abc import abstractmethod, ABC
 
-from ._printables import (min_ascii_code, max_ascii_code, ascii_printables_codes,
-                          ascii_codes_table_size, ascii_printables_chars)
+from text_encoder._printables import (min_ascii_code, max_ascii_code, ascii_printables_codes,
+                                      ascii_codes_table_size, ASCII_PRINTABLES_CHARS)
 
 
 def _get_in_int_format(key):
@@ -30,7 +30,7 @@ class Cesar(Coder):
         self._cesar_key = key
 
     def encode_char(self, _char):
-        if _char in ascii_printables_chars:
+        if _char in ASCII_PRINTABLES_CHARS:
             return chr(self._get_new_ascii_code(_char))
         return _char
 

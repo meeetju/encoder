@@ -1,3 +1,6 @@
+"""Encoders."""
+# pylint: disable=too-few-public-methods
+
 from abc import abstractmethod, ABC
 
 from text_encoder._utils import time_it
@@ -47,7 +50,7 @@ class NullCoder(BaseEncoder):
         self._reader = reader
         self._writer = writer
 
-    def encode(self,  stop_predicate=lambda x: False):
+    def encode(self, stop_predicate=lambda x: False):
         """Rewrite reader input to output until stop condition is met.
 
         :param stop_predicate: predicate

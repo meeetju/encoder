@@ -25,14 +25,13 @@ C:\>python -m text_encoder --in_string="this works" --out_console --cesar --key=
 
 ## Design
 
-### Encoders
+### Available Encoders
 
-![Class Diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/meeetju/text_encoder/meeetju/start/docs/design_encoder.puml)
 ![Class Diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/meeetju/text_encoder/meeetju/start/docs/design_encoders.puml)
 
-### Main
+### Encoder Structure
 
-![Class Diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/meeetju/text_encoder/meeetju/start/docs/design_main.puml)
+![Class Diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/meeetju/text_encoder/meeetju/start/docs/design_encoder.puml)
 
 ## Running the tests with coverage check
 

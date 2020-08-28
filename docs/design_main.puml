@@ -2,8 +2,6 @@
 hide empty methods
 hide empty attributes
 
-title Text Encoder Main
-
 class Main {
 }
 

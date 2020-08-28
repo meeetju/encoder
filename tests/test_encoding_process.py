@@ -30,14 +30,15 @@ class TestEncoder:
 
     def test_not_printable_char_is_not_cesar_encoded(self):
 
-        NULL = chr(0x01)
+        null = chr(0x01)
         string_writer = StringWriter()
 
-        encoder = Encoder(StringReader('a{}c'.format(NULL)), string_writer, Cesar(ScalarEncryptionKey(2)))
+        encoder = Encoder(StringReader('a{}c'.format(null)), string_writer,
+                          Cesar(ScalarEncryptionKey(2)))
         encoder.encode()
         result_string = string_writer.get()
 
-        assert result_string == 'c{}e'.format(NULL)
+        assert result_string == 'c{}e'.format(null)
 
     def test_string_is_cesar_encoded_to_string(self):
 
@@ -89,7 +90,7 @@ class TestEncoder:
         string_reader = StringReader('some header \n test me')
         string_writer = StringWriter()
         coder = Xor(ScalarEncryptionKey(3))
-        is_end_of_header = lambda x: x =='\n'
+        is_end_of_header = lambda x: x == '\n'
 
         header_rewriter = NullCoder(string_reader, string_writer)
         body_encoder = Encoder(string_reader, string_writer, coder)
@@ -105,7 +106,7 @@ class TestEncoder:
         string_reader = StringReader('some header \n test me')
         string_writer = StringWriter()
         coder = Xor(ScalarEncryptionKey(3))
-        is_end_of_header = lambda x: x =='\n'
+        is_end_of_header = lambda x: x == '\n'
 
         header_rewriter = NullCoder(string_reader, string_writer)
         body_encoder = Encoder(string_reader, string_writer, coder)
@@ -121,7 +122,7 @@ class TestEncoder:
         string_reader = StringReader('aaaaabccccc')
         strint_writer = StringWriter()
         coder = Cesar(ScalarEncryptionKey(1))
-        is_end_of_encoding = lambda x: x =='b'
+        is_end_of_encoding = lambda x: x == 'b'
 
         encoder = Encoder(string_reader, strint_writer, coder)
         encoder.encode(is_end_of_encoding)
