@@ -9,10 +9,10 @@
 from mock import patch, mock_open, MagicMock, call
 import pytest
 
-from text_encoder._codes import Cesar, Xor, ScalarEncryptionKey
-from text_encoder._encoders import Encoder, HeadedEncoder, NullCoder
+from text_encoder import Cesar, Xor, ScalarEncryptionKey
+from text_encoder import Encoder, HeadedEncoder, NullCoder
 from text_encoder.__main__ import main
-from text_encoder._readers_writers import StringReader, StringWriter, FileReader, FileWriter
+from text_encoder import StringReader, StringWriter, FileReader, FileWriter
 from text_encoder._encoding_process import EncodingDoneObservable
 
 

@@ -5,7 +5,7 @@
 # pylint: disable=no-self-use
 
 
-from text_encoder._codes import Cesar, Xor, IterableEncryptionKey, ScalarEncryptionKey
+from text_encoder import Cesar, Xor, IterableEncryptionKey, ScalarEncryptionKey
 from text_encoder._printables import ascii_codes_table_size
 
 
