@@ -1,4 +1,4 @@
-"""Test encoding methods."""
+"""Test codes and codes' keys."""
 # pylint: disable=too-few-public-methods
 # pylint: disable=missing-function-docstring
 # pylint: disable=missing-class-docstring

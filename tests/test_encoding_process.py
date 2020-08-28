@@ -1,4 +1,4 @@
-"""Test encoder."""
+"""Test encoding process."""
 # pylint: disable=too-few-public-methods
 # pylint: disable=missing-function-docstring
 # pylint: disable=missing-class-docstring
@@ -10,8 +10,10 @@ from mock import patch, mock_open, MagicMock, call
 import pytest
 
 from text_encoder._codes import Cesar, Xor, ScalarEncryptionKey
-from text_encoder._encoder import Encoder, HeadedEncoder, NullCoder, main
-from text_encoder._reader_writer import StringReader, StringWriter, FileReader, FileWriter
+from text_encoder._encoders import Encoder, HeadedEncoder, NullCoder
+from text_encoder.__main__ import main
+from text_encoder._readers_writers import StringReader, StringWriter, FileReader, FileWriter
+from text_encoder._encoding_process import EncodingDoneObservable
 
 
 class TestEncoder:
@@ -284,3 +286,15 @@ class TestMain:
             main()
 
         assert 'No key nor key_vector provided.' in error.value.args
+
+
+class TestObservable:
+
+    """Test Encoding Done Observable"""
+
+    def test_exception_is_raised_if_not_observer_registered(self):
+
+        with pytest.raises(TypeError) as error:
+            EncodingDoneObservable().register_observer('observer')
+
+        assert 'Not ProcessDoneObserver type' in error.value.args

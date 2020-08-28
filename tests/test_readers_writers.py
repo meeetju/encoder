@@ -9,8 +9,8 @@
 from mock import patch, mock_open, MagicMock
 import pytest
 
-from text_encoder._reader_writer import (StringReader, StringWriter, FileReader,
-                                         FileWriter, ConsoleReader, ConsoleWriter)
+from text_encoder._readers_writers import (StringReader, StringWriter, FileReader,
+                                           FileWriter, ConsoleReader, ConsoleWriter)
 
 
 class TestStringReader:

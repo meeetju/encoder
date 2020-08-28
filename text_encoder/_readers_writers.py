@@ -6,6 +6,9 @@ from os import fsync
 import sys
 
 
+from text_encoder._encoding_process import EncodingDoneObserver
+
+
 class Reader(ABC):
 
     """Reader interface."""
@@ -92,15 +95,6 @@ class Writer(ABC):
         """This method shall be implemented."""
 
 
-class ProcessDoneObserver(ABC):
-
-    """Process Done Observer interface."""
-
-    @abstractmethod
-    def finish(self):
-        """This method shall be implemented."""
-
-
 class StringWriter(Writer):
 
     """Write text to string output."""
@@ -121,7 +115,7 @@ class StringWriter(Writer):
         return ''.join(self._output)
 
 
-class FileWriter(Writer, ProcessDoneObserver):
+class FileWriter(Writer, EncodingDoneObserver):
 
     """Write text to file output."""
 
