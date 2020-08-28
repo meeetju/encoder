@@ -13,28 +13,7 @@ from text_encoder._encoding_process import EncodingDoneObservable
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 
-class BaseParser(ABC):
-
-    """Parser interface."""
-
-    @abstractmethod
-    def get_reader(self):
-        """Get selected text reader."""
-
-    @abstractmethod
-    def get_writer(self, subject):
-        """Get selected text writer."""
-
-    @abstractmethod
-    def get_coder(self):
-        """Get selected text coder."""
-
-    @abstractmethod
-    def is_headed(self):
-        """Is text headed."""
-
-
-class ParseConsoleArguments(BaseParser):
+class CmdArgumentsParser(object):
 
     """Parse input arguments."""
 
@@ -55,8 +34,41 @@ class ParseConsoleArguments(BaseParser):
         self.parser.add_argument('--headed', action='store_true', help='Message has header')
         self._arguments = self.parser.parse_args()
 
-    def get_reader(self):
-        """Get selected text reader."""
+    @property
+    def arguments(self):
+        """Parsed arguments.
+
+        :returns: parsed arguments
+        :rtype: arguments
+        """
+        return self._arguments
+
+
+class CmdEncoderFactory(object):
+
+    """Command line Encoder factory."""
+
+    def __init__(self, arguments, encoding_done_subject=None):
+        self._arguments = arguments
+        self._encoding_done_subject = encoding_done_subject
+
+    def get_encoder(self):
+        """Get appropriate encoder."""
+        reader = self._get_reader()
+        writer = self._get_writer(self._encoding_done_subject)
+        coder = self._get_coder()
+
+        if self._arguments.headed:
+
+            is_end_of_header = lambda x: x == '\n'
+
+            header_encoder = NullCoder(reader, writer)
+            body_encoder = Encoder(reader, writer, coder)
+            return HeadedEncoder(header_encoder, body_encoder, is_end_of_header)
+
+        return Encoder(reader, writer, coder)
+
+    def _get_reader(self):
         if self._arguments.in_string:
             return StringReader(self._arguments.in_string)
         if self._arguments.in_file:
@@ -65,18 +77,16 @@ class ParseConsoleArguments(BaseParser):
             return ConsoleReader()
         raise RuntimeError('No reader provided.')
 
-    def get_writer(self, subject):
-        """Get selected text writer."""
+    def _get_writer(self, observable):
         if self._arguments.out_file:
             file_writer = FileWriter(self._arguments.out_file)
-            subject.register_observer(file_writer)
+            observable.register_observer(file_writer)
             return file_writer
         if self._arguments.out_console:
             return ConsoleWriter()
         raise RuntimeError('No writer provided.')
 
-    def get_coder(self):
-        """Get selected text coder."""
+    def _get_coder(self):
         if self._arguments.cesar:
             return Cesar(self._get_key())
         if self._arguments.xor:
@@ -92,47 +102,15 @@ class ParseConsoleArguments(BaseParser):
             return IterableEncryptionKey(self._arguments.key_text)
         raise RuntimeError('No key nor key_vector provided.')
 
-    def is_headed(self):
-        """Is text headed.
-
-        :return: is_headed
-        :rtype: bool
-        """
-        return self._arguments.headed
-
-
-class CmdEncoderFactory(object):
-
-    """Command line Encoder factory."""
-
-    def __init__(self, parser, encoding_done_subject=None):
-        self._reader = parser.get_reader()
-        self._writer = parser.get_writer(encoding_done_subject)
-        self._coder = parser.get_coder()
-        self._is_headed = parser.is_headed()
-
-    def get_encoder(self):
-        """Get appropriate encoder."""
-        if self._is_headed:
-
-            is_end_of_header = lambda x: x == '\n'
-
-            header_encoder = NullCoder(self._reader, self._writer)
-            body_encoder = Encoder(self._reader, self._writer, self._coder)
-            return HeadedEncoder(header_encoder, body_encoder, is_end_of_header)
-
-        return Encoder(self._reader, self._writer, self._coder)
-
 
 def main():
 
     """Console for text Encoder."""
-    arg_parser = ArgumentParser()
-    parser = ParseConsoleArguments(arg_parser)
-
     encoding_done_subject = EncodingDoneObservable()
 
-    CmdEncoderFactory(parser, encoding_done_subject).get_encoder().encode()
+    arg_parser = ArgumentParser()
+    parser = CmdArgumentsParser(arg_parser)
+    CmdEncoderFactory(parser.arguments, encoding_done_subject).get_encoder().encode()
 
     encoding_done_subject.notify_observers()
 

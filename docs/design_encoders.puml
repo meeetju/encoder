@@ -1,0 +1,29 @@
+@startuml
+hide empty methods
+hide empty attributes
+
+title Encoders
+
+abstract class BaseEncoder {
+  {abstract}encode()
+}
+
+class Encoder {
+  +encode()
+}
+
+class NullCoder {
+  +encode()
+}
+
+class HeadedEncoder {
+  +encode()
+}
+
+BaseEncoder <|-- Encoder
+BaseEncoder <|-- NullCoder
+BaseEncoder <|-- HeadedEncoder
+
+HeadedEncoder -up-> NullCoder
+HeadedEncoder -up-> Encoder
+@enduml
